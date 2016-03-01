@@ -9,14 +9,14 @@ Gem::Specification.new do |s|
   s.license     = "MIT"
   s.authors     = ["Alexey Volochnev"]
   s.email       = "alexey.volochnev@gmail.com"
-  # s.homepage    = "http://github.com/avolochnev/lopata"
+  s.homepage    = "https://github.com/avolochnev/lopata"
   s.summary     = "lopata-#{Lopata::RSpec::Version::STRING}"
   s.description = "Functional acceptance tesging with rspec"
 
   s.files            = `git ls-files -- lib/*`.split("\n")
   s.files           += %w[README.md exe/lopata]
-  s.bindir      = 'exe'
-  s.executables = ['lopata']
+  s.bindir           = 'exe'
+  s.executables      = ['lopata']
   s.test_files       = []
   s.require_path     = "lib"
 
