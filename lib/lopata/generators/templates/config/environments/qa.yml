@@ -1,0 +1,8 @@
+url: http://yourapp.com
+name: QA
+# db:
+#   adapter: postgresql
+#   host: localhost
+#   username: username
+#   password: password
+#   database: database

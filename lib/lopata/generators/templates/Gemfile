@@ -1,0 +1,11 @@
+﻿source 'https://rubygems.org'
+gem 'selenium-webdriver'
+gem 'rspec', :require => 'spec'
+gem 'rake'
+gem 'activerecord', '~> 4.2.0'
+gem 'capybara', '~> 2.2.1' # fix capybara version to avoid capybara-angular deprication varnings.
+# gem 'capybara-angular'
+gem 'thor'
+# gem 'pg'
+# gem 'factory_girl'
+# gem 'lopata', path: 'vendor/lopata'

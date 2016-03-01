@@ -1,0 +1,40 @@
+require 'thor'
+require_relative 'generators/app'
+require_relative 'config'
+
+module Lopata
+  class Runner < Thor
+    desc 'test', 'Run tests'
+    option :env, default: :qa, aliases: 'e'
+    option :"no-log", type: :boolean, aliases: 'n'
+    option :focus, type: :boolean, aliases: 'f'
+    option :rerun, type: :boolean, aliases: 'r'
+    option :users, type: :array, aliases: 'u'
+    option :build, aliases: 'b'
+    def test
+      require 'rspec'
+
+      Dir["./spec/support/**/*.rb"].sort.each { |f| require f}
+      ENV['HOME'] = File.absolute_path('.') # disable warning on rspec loading on windows
+      Lopata::Config.ops = {
+        focus: options[:focus],
+        rerun: options[:rerun],
+        users: options[:users],
+        build: options[:build],
+        env:   options[:env],
+      }
+      Lopata::Config.init(options[:env])
+      Lopata::Config.initialize_test
+
+      ::RSpec::Core::Runner.run ['spec']
+    end
+
+    default_task :test
+
+    register Generators::App, :new, 'lopata new project-name', 'Init new lopata projects'
+  end
+end
+
+raise 'No Lopatafile found in running dir' unless File.exists?('./Lopatafile')
+eval File.binread('./Lopatafile')
+
