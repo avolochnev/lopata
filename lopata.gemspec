@@ -15,11 +15,13 @@ Gem::Specification.new do |s|
 
   s.files            = `git ls-files -- lib/*`.split("\n")
   s.files           += %w[README.md exe/lopata]
-  s.executables      = `git ls-files -- exe/*`.split("\n").map{ |f| File.basename(f) }
+  s.bindir      = 'exe'
+  s.executables = ['lopata']
   s.test_files       = []
+  s.require_path     = "lib"
 
   s.required_ruby_version = '>= 2.1.0'
 
-  s.add_dependency "httparty"
-  s.add_dependency "thor"
+  s.add_dependency "httparty", '0.11.0'
+  s.add_dependency "thor", '~> 0'
 end
