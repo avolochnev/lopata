@@ -5,3 +5,5 @@ gem 'rake'
 gem 'activerecord', '~> 4.2.0'
 gem 'capybara', '~> 2.2.1' # fix capybara version to avoid capybara-angular deprication varnings.
 gem 'thor'
+<% require "lopata/rspec/version" %>
+gem 'lopata', '<%= Lopata::RSpec::Version::STRING %>'
