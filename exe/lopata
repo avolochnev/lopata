@@ -1,4 +1,4 @@
 #!/usr/bin/env ruby
-require 'bundler/setup' # TODO - remove after debugging
+require 'bundler/setup'
 require_relative '../lib/lopata/runner'
 Lopata::Runner.start ARGV

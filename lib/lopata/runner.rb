@@ -35,6 +35,8 @@ module Lopata
   end
 end
 
-raise 'No Lopatafile found in running dir' unless File.exists?('./Lopatafile')
-eval File.binread('./Lopatafile')
+unless ARGV.first == 'new'
+  raise 'No Lopatafile found in running dir' unless File.exists?('./Lopatafile')
+  eval File.binread('./Lopatafile')
+end
 
