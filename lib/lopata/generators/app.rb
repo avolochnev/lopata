@@ -25,6 +25,18 @@ module Lopata
           empty_directory "#{name}/#{dir}"
         end
       end
+
+      def bundle
+        Dir.chdir name do
+          _bundle_command = Gem.bin_path('bundler', 'bundle')
+
+          require 'bundler'
+          Bundler.with_clean_env do
+            output = `"#{Gem.ruby}" "#{_bundle_command}"`
+            print output # unless options[:quiet]
+          end
+        end
+      end
     end
   end
 end

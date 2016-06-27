@@ -10,7 +10,6 @@ require 'selenium/webdriver'
 require 'fileutils'
 require 'active_support'
 require 'active_record'
-require 'factory_girl'
 require 'lopata'
 
 relative_load_paths = %w[app/pages app/services app/models]
