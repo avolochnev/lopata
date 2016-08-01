@@ -25,6 +25,7 @@ module Lopata
       }
       Lopata::Config.init(options[:env])
       Lopata::Config.initialize_test
+      Lopata::Config.init_rspec
 
       ::RSpec::Core::Runner.run ['spec']
     end

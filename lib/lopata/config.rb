@@ -2,7 +2,7 @@ module Lopata
   module Config
     extend self
 
-    attr_accessor :build_number, :lopata_host, :only_roles, :role_descriptions, :after_as, :ops
+    attr_accessor :build_number, :lopata_host, :lopata_code, :only_roles, :role_descriptions, :after_as, :ops
 
     def init(env)
       require 'yaml'
@@ -14,7 +14,7 @@ module Lopata
 
     %w{url name readonly}.each do |opt|
       define_method opt do
-        raise "RstConfig unititlalized, use RstConfig#init(env) to set environment" unless @config
+        raise "Lopata::Config unititlalized, use Lopata::Config#init(env) to set environment" unless @config
         @config[opt]
       end
     end
@@ -29,6 +29,14 @@ module Lopata
       ::RSpec.configure do |c|
         c.include Lopata::RSpec::DSL
         c.include Lopata::RSpec::Role
+      end
+    end
+
+    def init_lopata_logging(build)
+      Lopata::Config.build_number = build
+      RSpec.configure do |c|
+        require 'lopata/rspec/formatter' # class cross-loading, avoid auto-loading
+        c.add_formatter Lopata::RSpec::Formatter
       end
     end
 

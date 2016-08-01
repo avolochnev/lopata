@@ -75,7 +75,7 @@ module Lopata
     end
 
     def start(count)
-      @launch_id = JSON.parse(post("/builds/#{build_number}/launches.json", body: {total: count}).body)['id']
+      @launch_id = JSON.parse(post("/projects/#{project_code}/builds/#{build_number}/launches.json", body: {total: count}).body)['id']
     end
 
     def add_attempt(example, status, msg = nil, backtrace = nil)
@@ -89,7 +89,8 @@ module Lopata
 
     def test_id(example)
       request = {
-        find_or_create: {
+        test: {
+          project_code: project_code,
           title: example.full_description,
           scenario: example.metadata[:example_group][:full_description],
           build_number: build_number
@@ -100,11 +101,11 @@ module Lopata
     end
 
     def to_rerun
-      get_json("/builds/#{build_number}/suspects.json")
+      get_json("/projects/#{project_code}/builds/#{build_number}/suspects.json")
     end
 
     def to_full_rescan
-      to_rerun + get_json("/builds/#{build_number}/failures.json")
+      to_rerun + get_json("/projects/#{project_code}/builds/#{build_number}/failures.json")
     end
 
     private
@@ -124,13 +125,17 @@ module Lopata
     def inc_finished
       @finished ||= 0
       @finished += 1
-      response = patch("/builds/#{build_number}/launches/#{@launch_id}",
+      response = patch("/launches/#{@launch_id}",
         body: { finished: @finished }.to_json,
         headers: { 'Content-Type' => 'application/json', 'Accept' => 'application/json' })
       if response.code == 404
         puts 'Launch has been cancelled. Exit.'
         exit!
       end
+    end
+
+    def project_code
+      Lopata::Config.lopata_code
     end
   end
 end
