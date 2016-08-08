@@ -33,8 +33,8 @@ module Lopata
     end
 
     def init_lopata_logging(build)
-      Lopata::Config.build_number = build
-      RSpec.configure do |c|
+      self.build_number = build
+      ::RSpec.configure do |c|
         require 'lopata/rspec/formatter' # class cross-loading, avoid auto-loading
         c.add_formatter Lopata::RSpec::Formatter
       end
