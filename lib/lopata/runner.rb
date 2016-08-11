@@ -11,6 +11,7 @@ module Lopata
     option :rerun, type: :boolean, aliases: 'r'
     option :users, type: :array, aliases: 'u'
     option :build, aliases: 'b'
+    option :keep, type: :boolean, aliases: 'k'
     def test
       require 'rspec'
 
@@ -22,6 +23,7 @@ module Lopata
         users: options[:users],
         build: options[:build],
         env:   options[:env],
+        keep:  options[:keep]
       }
       Lopata::Config.init(options[:env])
       Lopata::Config.initialize_test

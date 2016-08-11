@@ -20,7 +20,8 @@ module Lopata
 
       def example_failed(notification)
         example = notification.example
-        @client.add_attempt(example, Lopata::FAILED, error_message_for(example), backtrace_for(notification))
+        backtrace = backtrace_for(notification)
+        @client.add_attempt(example, Lopata::FAILED, error_message_for(example), backtrace)
       end
 
       def example_pending(notification)
@@ -41,7 +42,7 @@ module Lopata
       def backtrace_for(notification)
         example = notification.example
         exception = example.execution_result.exception
-        msg = notification.message_lines.map(&:strip).join("\n")
+        msg = notification.formatted_backtrace.map(&:strip).join("\n")
         msg << "\n"
         if shared_group = find_shared_group(example)
           msg << "# Shared Example Group: \"#{shared_group.metadata[:shared_group_name]}\" called from "

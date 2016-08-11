@@ -32,6 +32,13 @@ module Lopata
       end
     end
 
+    def init_active_record
+      require 'lopata/rspec/ar_dsl'
+      ::RSpec.configure do |c|
+        c.include Lopata::RSpec::AR::DSL
+      end
+    end
+
     def init_lopata_logging(build)
       self.build_number = build
       ::RSpec.configure do |c|
