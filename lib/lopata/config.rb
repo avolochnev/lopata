@@ -47,6 +47,19 @@ module Lopata
       end
     end
 
+    def init_rerun
+      ::RSpec.configure do |c|
+        c.inclusion_filter = { full_description: build_rerun_filter_proc }
+      end
+    end
+
+    def build_rerun_filter_proc
+      to_rerun = Lopata::Client.new(Lopata::Config.build_number).to_rerun
+      Proc.new do |desc|
+        to_rerun.include?(desc)
+      end
+    end
+
     def before_start(&block)
       @before_start = block
     end

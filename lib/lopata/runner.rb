@@ -28,6 +28,7 @@ module Lopata
       Lopata::Config.init(options[:env])
       Lopata::Config.initialize_test
       Lopata::Config.init_rspec
+      Lopata::Config.init_rerun if options[:rerun]
 
       ::RSpec::Core::Runner.run ['spec']
     end
