@@ -12,6 +12,10 @@ module Lopata
       # init_includes
     end
 
+    def [](key)
+      @config[key]
+    end
+
     %w{url name readonly}.each do |opt|
       define_method opt do
         raise "Lopata::Config unititlalized, use Lopata::Config#init(env) to set environment" unless @config
