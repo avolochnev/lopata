@@ -1,24 +1,24 @@
 module Lopata
   module DownloadDir
-    RELATIVE_PATH = './tmp/target'
+    RELATIVE_PATH = File.join('.', 'tmp', 'target')
 
     extend self
 
     def path
-      @path ||= File.absolute_path(RELATIVE_PATH).gsub("/", '\\')
+      @path ||= File.absolute_path(RELATIVE_PATH)
     end
 
     def empty!
-      FileUtils.rm Dir.glob("#{RELATIVE_PATH}/*")
+      FileUtils.rm Dir.glob(File.join(path, '*'))
     end
 
     def ensure_exist
-      FileUtils::mkdir_p RELATIVE_PATH unless Dir.exist?(RELATIVE_PATH)
+      FileUtils::mkdir_p path unless Dir.exist?(path)
     end
 
     def has_file?(file_name)
       require 'timeout'
-      target_file = File.join(RELATIVE_PATH, file_name)
+      target_file = filepath(file_name)
       Timeout.timeout(10) do
         sleep 0.1 until File.exist?(target_file)
         true
@@ -27,24 +27,38 @@ module Lopata
       false
     end
 
+    def filepath(name)
+      File.join(path, name)
+    end
+
     def init_capybara
+      target_path = path
+      target_path = target_path.gsub('/', '\\') if Gem.win_platform?
+
       profile = Selenium::WebDriver::Firefox::Profile.new
       profile['browser.download.folderList'] = 2
       profile['browser.download.manager.showWhenStarting'] = false
       ensure_exist
-      profile['browser.download.dir'] = path
-      profile['browser.download.downloadDir'] = path
-      profile['browser.download.defaultFolder'] = path
+      profile['browser.download.dir'] = target_path
+      profile['browser.download.downloadDir'] = target_path
+      profile['browser.download.defaultFolder'] = target_path
       profile['browser.helperApps.alwaysAsk.force'] = false
       profile['browser.download.useDownloadDir'] = true
       profile['browser.helperApps.neverAsk.saveToDisk'] =
-         "application/octet-stream, application/msword, application/pdf, application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        %w{
+            application/octet-stream
+            application/msword
+            application/pdf
+            application/x-pdf
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
+            application/vnd.ms-excel
+          }.join(', ')
+      profile['pdfjs.disabled'] = true
+      profile['plugin.scan.Acrobat'] = "99.0"
+      profile['plugin.scan.plid.all'] = false
 
       Capybara.register_driver :selenium_with_download do |app|
-        Capybara::Selenium::Driver.new(
-           app,
-           {:browser => :firefox, :profile => profile}
-        )
+        Capybara::Selenium::Driver.new(app, browser: :firefox, profile: profile)
       end
 
       Capybara.default_driver = :selenium_with_download
