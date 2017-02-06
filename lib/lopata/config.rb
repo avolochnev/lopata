@@ -34,6 +34,7 @@ module Lopata
         c.include Lopata::RSpec::DSL
         c.include Lopata::RSpec::Role
       end
+      init_rspec_filters
     end
 
     def init_active_record
@@ -54,6 +55,19 @@ module Lopata
     def init_rerun
       ::RSpec.configure do |c|
         c.inclusion_filter = { full_description: build_rerun_filter_proc }
+      end
+    end
+
+    def init_rspec_filters
+      filters = {}
+      filters[:focus] = true if ops[:focus]
+      if ops[:rerun]
+        filters[:full_description] = build_rerun_filter_proc
+      end
+      unless filters.blank?
+        ::RSpec.configure do |c|
+          c.inclusion_filter = filters
+        end
       end
     end
 
