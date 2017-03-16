@@ -64,6 +64,9 @@ module Lopata
       if ops[:rerun]
         filters[:full_description] = build_rerun_filter_proc
       end
+      if ops[:text]
+        filters[:full_description] = ->(desc) { desc.include?(ops[:text]) }
+      end
       unless filters.blank?
         ::RSpec.configure do |c|
           c.inclusion_filter = filters
