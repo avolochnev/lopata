@@ -53,6 +53,7 @@ module Lopata
             application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
             application/vnd.ms-excel
             application/xml
+            application/json
           }.join(', ')
       profile['pdfjs.disabled'] = true
       profile['plugin.scan.Acrobat'] = "99.0"

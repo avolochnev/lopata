@@ -2,7 +2,8 @@ module Lopata
   module Config
     extend self
 
-    attr_accessor :build_number, :lopata_host, :lopata_code, :only_roles, :role_descriptions, :after_as, :ops
+    attr_accessor :build_number, :lopata_host, :lopata_code, :only_roles, :role_descriptions, :after_as,
+                  :default_role, :ops
 
     def init(env)
       require 'yaml'
