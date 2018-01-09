@@ -1,7 +1,7 @@
 module Lopata
   module RSpec
     module Version
-      STRING = '0.0.14'
+      STRING = '0.0.15'
     end
   end
 end
