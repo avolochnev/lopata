@@ -3,7 +3,7 @@ module Lopata
     extend self
 
     attr_accessor :build_number, :lopata_host, :lopata_code, :only_roles, :role_descriptions, :after_as,
-                  :default_role, :ops
+                  :default_role, :ops, :after_scenario
 
     def init(env)
       require 'yaml'
