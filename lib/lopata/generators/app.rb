@@ -14,6 +14,7 @@ module Lopata
         template '.rspec', "#{name}/.rspec"
         template 'config/environments/qa.yml', "#{name}/config/environments/qa.yml"
         template 'config/initializers/capybara.rb', "#{name}/config/initializers/capybara.rb"
+        template 'spec/spec_helper.rb', "#{name}/spec/spec_helper.rb"
       end
 
       def init_dirs
