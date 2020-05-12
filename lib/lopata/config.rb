@@ -7,7 +7,9 @@ module Lopata
 
     def init(env)
       require 'yaml'
-      @config = YAML::load(File.open("./config/environments/#{env}.yml")) || {}
+      @config = {}
+      config_filename = "./config/environments/#{env}.yml"
+      @config = YAML::load(File.open(config_filename)) if File.exists?(config_filename)
       init_db
       @role_descriptions ||= {}
       # init_includes
@@ -88,6 +90,10 @@ module Lopata
 
     def initialize_test
       @before_start.call if @before_start
+    end
+
+    def world
+      @world ||= Lopata::World.new
     end
   end
 end

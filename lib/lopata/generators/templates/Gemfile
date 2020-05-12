@@ -5,5 +5,5 @@ gem 'rake'
 gem 'activerecord', '~> 6.0.2'
 gem 'capybara', '~> 3.11.1'
 gem 'thor'
-<% require "lopata/rspec/version" %>
-gem 'lopata', '<%= Lopata::RSpec::Version::STRING %>'
+<% require "lopata/version" %>
+gem 'lopata', '<%= Lopata::Version::STRING %>'

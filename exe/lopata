@@ -1,4 +1,11 @@
 #!/usr/bin/env ruby
 require 'bundler/setup'
 require_relative '../lib/lopata/runner'
-Lopata::Runner.start ARGV
+
+# use default command with arguments if given command is unknown.
+argv = ARGV.dup
+unless Lopata::Runner.all_commands.keys.include? argv
+  argv.unshift 'test'
+end
+
+Lopata::Runner.start argv

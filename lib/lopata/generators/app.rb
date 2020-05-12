@@ -22,7 +22,7 @@ module Lopata
           empty_directory "#{name}/app/#{dir}"
         end
 
-        %w{spec config/initializers}.each do |dir|
+        %w{scenarios shared_steps config/initializers}.each do |dir|
           empty_directory "#{name}/#{dir}"
         end
       end
