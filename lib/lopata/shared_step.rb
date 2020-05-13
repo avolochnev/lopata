@@ -1,21 +1,21 @@
 module Lopata
   class SharedStep
-    attr_reader :block
+    attr_reader :name, :block
 
     class SharedStepNotFound < StandardError; end
 
     def self.register(name, &block)
       raise ArgumentError, "Comma is not allowed in shared step name: '%s'" % name if name =~ /,/
       @shared_steps ||= {}
-      @shared_steps[name] = new(&block)
+      @shared_steps[name] = new(name, &block)
     end
 
     def self.find(name)
       @shared_steps[name] or raise StandardError, "Shared step '%s' not found" % name
     end
 
-    def initialize(&block)
-      @block = block
+    def initialize(name, &block)
+      @name, @block = name, block
     end
 
     def steps
@@ -23,7 +23,7 @@ module Lopata
     end
 
     def build_steps
-      builder = Lopata::ScenarioBuilder.new
+      builder = Lopata::ScenarioBuilder.new(name)
       builder.instance_exec(&block)
       builder.steps
     end

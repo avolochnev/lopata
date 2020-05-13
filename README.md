@@ -14,7 +14,7 @@ Create new lopata project:
 
 Setup environment: edit <project-name>/config/environments/qa.yml for setup project for testing.
 
-Write tests: puts RSpec tests in <project-name>/spec folder.
+Write tests: puts tests in <project-name>/scenarios folder. Define shared steps in <project-name>/shared_steps folder.
 
 Run tests:
 

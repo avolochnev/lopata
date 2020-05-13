@@ -27,7 +27,7 @@ Feature: Setup and teardown
       """ruby
       Lopata.define 'Setup scenario' do
         setup { @one = 1 }
-        teardown { @one = nil; remove_instance_variable(:@one) }
+        teardown { remove_instance_variable(:@one) }
 
         it 'works' do
           expect(@one).to eq 1
@@ -36,3 +36,25 @@ Feature: Setup and teardown
       """
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "1 scenario (1 passed)"
+
+  Scenario: Teardown order with shared steps
+    Given a file named "shared_steps/scenario.rb" with:
+      """ruby
+      Lopata.shared_step 'one' do
+        setup { @one = 1 }
+        teardown { remove_instance_variable(:@one) }
+      end
+      """
+    And a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Teardown in shared steps' do
+        setup 'one'
+
+        it 'works' do
+          expect(@one).to eq 1
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "1 scenario (1 passed)"
+

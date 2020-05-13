@@ -10,8 +10,8 @@ module Lopata
     Lopata::ScenarioBuilder.define(*args, &block)
   end
 
+  # Skip scenario definition. Option to temporary ignore scenario
   def self.xdefine(*args, &block)
-    Lopata::ScenarioBuilder.xdefine(*args, &block)
   end
 
   def self.shared_step(name, &block)

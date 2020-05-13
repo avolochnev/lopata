@@ -49,10 +49,8 @@ module Lopata
 
     def init_lopata_logging(build)
       self.build_number = build
-      ::RSpec.configure do |c|
-        require 'lopata/rspec/formatter' # class cross-loading, avoid auto-loading
-        c.add_formatter Lopata::RSpec::Formatter
-      end
+      require 'lopata/observers/web_logger'
+      add_observer Lopata::Observers::WebLogger.new
     end
 
     def init_rerun
@@ -94,6 +92,10 @@ module Lopata
 
     def world
       @world ||= Lopata::World.new
+    end
+
+    def add_observer(observer)
+      world.observers << observer
     end
   end
 end

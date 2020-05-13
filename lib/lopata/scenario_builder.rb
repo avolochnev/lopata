@@ -1,28 +1,30 @@
 class Lopata::ScenarioBuilder
-  def self.define(title, metadata = nil, &block)
-    builder = new
-    builder.title(title)
-    builder.metadata(metadata) if metadata
+  attr_reader :title, :common_metadata
+
+  def self.define(title, metadata = {}, &block)
+    builder = new(title, metadata)
     builder.instance_exec &block
     builder.build
   end
 
-  # Do noting. Exclude defined scenario from suite.
-  def self.xdefine(*attrs)
+  def initialize(title, metadata = {})
+    @title, @common_metadata = title, metadata
   end
 
   def build
-    world = Lopata::Config.world
-    option_combinations.map do |option_set|
-      args = prepare_args(option_set)
-      raise "scenario required a name in first argument" unless args.first.is_a? String
-      scenario = Lopata::Scenario.new(*args)
+    option_combinations.each do |option_set|
+      metadata = common_metadata.merge(option_set.metadata)
+      scenario = Lopata::Scenario.new(title, option_set.title, metadata)
 
       steps.each do |step|
+        next if step.condition && !step.condition.match?(scenario)
+        step.pre_steps(scenario).each { |s| scenario.steps << s }
         scenario.steps << step
       end
 
-      scenario.steps << Lopata::Config.after_scenario if Lopata::Config.after_scenario
+      if Lopata::Config.after_scenario
+        scenario.steps << Lopata::Step.new(:after_scenario, &Lopata::Config.after_scenario)
+      end
 
       world.scenarios << scenario
     end
@@ -56,36 +58,22 @@ class Lopata::ScenarioBuilder
     @skip_when && @skip_when.call(option_set)
   end
 
-  %i{setup action it teardown}.each do |name|
+  %i{ setup action it teardown }.each do |name|
     name_if = "%s_if" % name
     name_unless = "%s_unless" % name
     define_method name, ->(*args, &block) { add_step(name, *args, &block) }
-    define_method name_if, ->(condition, *args, &block) { add_step(name, *args, if_cond: condition, &block) }
-    define_method name_unless, ->(condition, *args, &block) { add_step(name, *args, unless_cond: condition, &block) }
+    define_method name_if, ->(condition, *args, &block) { add_step(name, *args, condition: Lopata::Condition.new(condition), &block) }
+    define_method name_unless, ->(condition, *args, &block) { add_step(name, *args, condition: Lopata::Condition.new(condition, positive: false), &block) }
   end
 
-  def add_step(method_name, *args, if_cond: nil, unless_cond: nil, &block)
-    steps << Lopata::Step.new(method_name, *args) do
-      # will be called in context of scenario
-      next if if_cond && !match_metadata?(if_cond)
-      next if unless_cond && match_metadata?(unless_cond)
-
-      flat_args = args.flatten
-      flat_args = separate_args(flat_args) if method_name =~ /^(setup|action)/
-      converted_args = convert_args(*flat_args)
-      converted_args.shift if method_name =~ /^it$/
-      converted_args.each do |step|
-        if step.is_a?(String)
-          Lopata::SharedStep.find(step).steps.each do |shared_step|
-            instance_exec(&shared_step.block)
-          end
-        elsif step.is_a?(Proc)
-          instance_exec(&step)
-        end
+  def add_step(method_name, *args, condition: nil, &block)
+    step_class =
+      if method_name =~ /^(setup|action|teardown)/
+        Lopata::ActionStep
+      else
+        Lopata::Step
       end
-      # run_step method_name, *converted_args, &block
-      instance_exec(&block) if block
-    end
+    steps << step_class.new(method_name, *args, condition: condition, &block)
   end
 
   def steps
@@ -118,10 +106,6 @@ class Lopata::ScenarioBuilder
   def roles
     return false if @without_user
     @roles ||= [Lopata::Config.default_role].compact
-  end
-
-  def title(value)
-    @title = value
   end
 
   def option(metadata_key, variants)
@@ -161,22 +145,8 @@ class Lopata::ScenarioBuilder
     combine(combinations, rest_options)
   end
 
-  def prepare_args(option_set, *args)
-    options_title, metadata = option_set.title, option_set.metadata
-    if args[0].is_a? String
-      args[0] = [@title, options_title, args[0]].compact.reject(&:empty?).join(' ')
-    else
-      args.unshift([@title, options_title].compact.reject(&:empty?).join(' '))
-    end
-
-    metadata.merge!(@common_metadata) if @common_metadata
-
-    if args.last.is_a? Hash
-      args.last.merge!(metadata)
-    else
-      args << metadata
-    end
-    args
+  def world
+    @world ||= Lopata::Config.world
   end
 
   # Набор вариантов, собранный для одного теста

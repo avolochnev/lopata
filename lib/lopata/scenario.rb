@@ -5,9 +5,9 @@ class Lopata::Scenario
 
   attr_reader :title, :metadata, :steps, :status
 
-  def initialize(*args)
-    @title = args.first
-    @metadata = args.last.is_a?(Hash) ? args.last : {}
+  def initialize(title, options_title, metadata = {})
+    @title = [title, options_title].compact.reject(&:empty?).join(' ')
+    @metadata = metadata
     @steps = []
     @status = :not_runned
   end
@@ -33,27 +33,8 @@ class Lopata::Scenario
     end
   end
 
-  def run_step(method_name, *args, &block)
-    instance_exec(&block)
-  end
-
   def world
     @world ||= Lopata::Config.world
-  end
-
-  def convert_args(*args)
-    args.map do |arg|
-      case arg
-        # trait symbols as link to metadata.
-        when Symbol then metadata[arg]
-      else
-        arg
-      end
-    end.flatten
-  end
-
-  def separate_args(args)
-    args.map { |a| a.is_a?(String) && a =~ /,/ ? a.split(',').map(&:strip) : a }.flatten
   end
 
   def failed?

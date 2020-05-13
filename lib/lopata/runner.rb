@@ -2,8 +2,10 @@ require 'thor'
 require_relative 'generators/app'
 require_relative 'config'
 require_relative 'world'
+require_relative 'loader'
 require_relative '../lopata'
 require_relative 'observers'
+require_relative 'condition'
 
 module Lopata
   class Runner < Thor
@@ -18,12 +20,10 @@ module Lopata
     option :text, aliases: 't'
     def test(*args)
       configure_from_options
-
-      # Dir["./spec/support/**/*.rb"].sort.each { |f| require f}
+      Lopata::Loader.load_shared_steps
+      Lopata::Loader.load_scenarios(*args)
       world = Lopata::Config.world
-      world.setup_observers
-      world.load_shared_steps
-      world.load_scenarios(*args)
+      world.start
       world.scenarios.each { |s| s.run }
       world.finish
     end
@@ -49,8 +49,6 @@ module Lopata
         }
         Lopata::Config.init(options[:env])
         Lopata::Config.initialize_test
-        # ENV['HOME'] = File.absolute_path('.') # disable warning on rspec loading on windows
-        # Lopata::Config.init_rspec
       end
     end
   end
