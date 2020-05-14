@@ -13,20 +13,14 @@ module Lopata
         puts "#{total} scenario%s %s" % [total == 1 ? '' : 's', details]
       end
 
-      def step_finished(step)
-        @failed_steps << step if step.failed?
-      end
-
-      def scenario_started(scenario)
-        @failed_steps = []
-      end
-
       def scenario_finished(scenario)
         message = "#{scenario.title} #{bold(scenario.status.to_s.upcase)}"
         puts colored(message, scenario.status)
+        return unless scenario.failed?
 
-        @failed_steps.each do |step|
-          puts backtrace_formatter.error_message(step.exception, include_backtrace: true)
+        scenario.steps_in_running_order.each do |step|
+          puts colored("#{status_marker(step.status)} #{step.title}", step.status)
+          puts backtrace_formatter.error_message(step.exception, include_backtrace: true) if step.failed?
         end
       end
 
@@ -36,6 +30,7 @@ module Lopata
         case status
         when :failed then red(text)
         when :passed then green(text)
+        when :skipped then green(text)
         else text
         end
       end
@@ -48,6 +43,10 @@ module Lopata
         wrap(text, 32)
       end
 
+      def cyan(text)
+        wrap(text, 36)
+      end
+
       def bold(text)
         wrap(text, 1)
       end
@@ -58,6 +57,14 @@ module Lopata
 
       def backtrace_formatter
         @backtrace_formatter ||= Lopata::Observers::BacktraceFormatter.new
+      end
+
+      def status_marker(status)
+        case status
+        when :failed then "[!]"
+        when :skipped then "[-]"
+        else "[+]"
+        end
       end
     end
   end

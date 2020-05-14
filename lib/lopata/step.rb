@@ -1,13 +1,14 @@
 module Lopata
   class Step
-    attr_reader :block, :status, :exception, :args, :condition
+    attr_reader :block, :status, :exception, :args, :condition, :method_name, :shared_step
 
-    def initialize(method_name, *args, condition: nil, &block)
+    def initialize(method_name, *args, condition: nil, shared_step: nil, &block)
       @method_name = method_name
       @args = args
-      @status = :not_started
+      @status = :not_runned
       @block = block
       @exception = nil
+      @shared_step = shared_step
       @condition = condition || Lopata::Condition::EMPTY
     end
 
@@ -20,8 +21,13 @@ module Lopata
       rescue Exception => e
         @status = :failed
         @exception = e
+        scenario.skip_rest if skip_rest_on_failure?
       end
       world.notify_observers(:step_finished, self)
+    end
+
+    def title
+      args.first || shared_step && "#{method_name.capitalize} #{shared_step.name}" || "Untitled #{method_name}"
     end
 
     def run_step(scenario)
@@ -40,8 +46,20 @@ module Lopata
       status == :passed
     end
 
+    def skipped?
+      status == :skipped
+    end
+
+    def skip!
+      @status = :skipped
+    end
+
     def teardown?
       %i{ teardown cleanup }.include?(@method_name)
+    end
+
+    def skip_rest_on_failure?
+      %i{ action }.include?(@method_name)
     end
 
     def pre_steps(scenario)
@@ -63,7 +81,7 @@ module Lopata
           steps << Lopata::Step.new(method_name, &step)
         end
       end
-      steps
+      steps.reject { |s| !s.block }
     end
 
     def separate_args(args)
@@ -82,5 +100,8 @@ module Lopata
       end.flatten
     end
 
+    def title
+      shared_step && "#{method_name.capitalize} #{shared_step.name}" || "Untitled #{method_name}"
+    end
   end
 end

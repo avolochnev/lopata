@@ -24,6 +24,7 @@ module Lopata
 
     def build_steps
       builder = Lopata::ScenarioBuilder.new(name)
+      builder.shared_step = self
       builder.instance_exec(&block)
       builder.steps
     end

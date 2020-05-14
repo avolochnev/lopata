@@ -1,5 +1,6 @@
 class Lopata::ScenarioBuilder
   attr_reader :title, :common_metadata
+  attr_accessor :shared_step
 
   def self.define(title, metadata = {}, &block)
     builder = new(title, metadata)
@@ -19,7 +20,7 @@ class Lopata::ScenarioBuilder
       steps.each do |step|
         next if step.condition && !step.condition.match?(scenario)
         step.pre_steps(scenario).each { |s| scenario.steps << s }
-        scenario.steps << step
+        scenario.steps << step if step.block
       end
 
       if Lopata::Config.after_scenario
@@ -62,8 +63,12 @@ class Lopata::ScenarioBuilder
     name_if = "%s_if" % name
     name_unless = "%s_unless" % name
     define_method name, ->(*args, &block) { add_step(name, *args, &block) }
-    define_method name_if, ->(condition, *args, &block) { add_step(name, *args, condition: Lopata::Condition.new(condition), &block) }
-    define_method name_unless, ->(condition, *args, &block) { add_step(name, *args, condition: Lopata::Condition.new(condition, positive: false), &block) }
+    define_method name_if, ->(condition, *args, &block) {
+      add_step(name, *args, condition: Lopata::Condition.new(condition), &block)
+    }
+    define_method name_unless, ->(condition, *args, &block) {
+      add_step(name, *args, condition: Lopata::Condition.new(condition, positive: false), &block)
+    }
   end
 
   def add_step(method_name, *args, condition: nil, &block)
@@ -73,7 +78,7 @@ class Lopata::ScenarioBuilder
       else
         Lopata::Step
       end
-    steps << step_class.new(method_name, *args, condition: condition, &block)
+    steps << step_class.new(method_name, *args, condition: condition, shared_step: shared_step, &block)
   end
 
   def steps

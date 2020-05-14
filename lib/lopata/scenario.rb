@@ -15,9 +15,7 @@ class Lopata::Scenario
   def run
     @status = :running
     world.notify_observers(:scenario_started, self)
-    teardown_steps = []
-    @steps.reject(&:teardown?).each { |step| step.run(self) }
-    @steps.select(&:teardown?).each { |step| step.run(self) }
+    steps_in_running_order.each { |step| step.run(self) unless step.skipped? }
     @status = @steps.all?(&:passed?) ? :passed : :failed
     world.notify_observers(:scenario_finished, self)
   end
@@ -39,6 +37,15 @@ class Lopata::Scenario
 
   def failed?
     status == :failed
+  end
+
+  def steps_in_running_order
+    @steps.reject(&:teardown?) + @steps.select(&:teardown?)
+  end
+
+  def skip_rest
+    @steps.select { |s| s.status == :not_runned && !s.teardown? }.each(&:skip!)
+
   end
 
   private
