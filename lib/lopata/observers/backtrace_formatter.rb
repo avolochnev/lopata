@@ -28,6 +28,26 @@ module Lopata
           end
       end
 
+      def error_message(exception, include_backtrace: false)
+        backtrace = format(exception.backtrace)
+        source_line = extract_source_line(backtrace.first)
+        msg = ''
+        msg << "\n#{source_line}\n" if source_line
+        msg << "#{exception.class.name}: " unless exception.class.name =~ /RSpec/
+        msg << exception.message if exception.message
+        msg << "\n#{backtrace.join("\n")}\n" if include_backtrace
+        msg
+      end
+
+      def extract_source_line(backtrace_line)
+        file_and_line_number = backtrace_line.match(/(.+?):(\d+)(|:\d+)/)
+        return nil unless file_and_line_number
+        file_path, line_number = file_and_line_number[1..2]
+        return nil unless File.exist?(file_path)
+        lines = File.read(file_path).split("\n")
+        lines[line_number.to_i - 1]
+      end
+
       def backtrace_line(line)
         relative_path(line) unless exclude?(line)
       end

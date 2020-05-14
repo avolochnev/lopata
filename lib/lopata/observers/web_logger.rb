@@ -29,23 +29,25 @@ module Lopata
 
       def error_message_for(scenario)
         exception = scenario.steps.map(&:exception).compact.last
-        msg = ''
         if exception
-          msg << "#{exception.class.name}: " unless exception.class.name =~ /RSpec/
-          msg << "#{exception.message.to_s}" if exception.message
+          backtrace_formatter.error_message(exception)
+        else
+          'Empty error message'
         end
-        (msg.length == 0) ? 'Empty message' : msg
       end
 
       def backtrace_for(scenario)
         exception = scenario.steps.map(&:exception).compact.last
         msg = ''
         if exception
-          @backtrace_formatter ||= Lopata::Observers::BacktraceFormatter.new
-          msg = @backtrace_formatter.format(exception.backtrace).join("\n")
+          msg = backtrace_formatter.format(exception.backtrace).join("\n")
           msg << "\n"
         end
         msg
+      end
+
+      def backtrace_formatter
+        @backtrace_formatter ||= Lopata::Observers::BacktraceFormatter.new
       end
     end
   end

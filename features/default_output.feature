@@ -35,4 +35,14 @@ Feature: Output results
     And the output should not contain "thor"
     And the output should not contain "gems"
 
-
+  Scenario: Display failed source code line
+    Given a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Failed' do
+        it 'fails' do
+          expect(1).to eq 2
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "expect(1).to eq 2"

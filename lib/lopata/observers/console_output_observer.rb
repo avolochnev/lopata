@@ -26,12 +26,7 @@ module Lopata
         puts colored(message, scenario.status)
 
         @failed_steps.each do |step|
-          if step.exception
-            puts step.exception.message
-            puts
-            puts format_backtrace(step.exception.backtrace)
-            puts
-          end
+          puts backtrace_formatter.error_message(step.exception, include_backtrace: true)
         end
       end
 
@@ -61,9 +56,8 @@ module Lopata
         "\e[#{code}m#{text}\e[0m"
       end
 
-      def format_backtrace(backtrace)
-        @formatter ||= Lopata::Observers::BacktraceFormatter.new
-        @formatter.format(backtrace).join("\n")
+      def backtrace_formatter
+        @backtrace_formatter ||= Lopata::Observers::BacktraceFormatter.new
       end
     end
   end
