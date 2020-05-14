@@ -1,3 +1,5 @@
+require_relative 'backtrace_formatter'
+
 module Lopata
   module Observers
     class ConsoleOutputObserver < BaseObserver
@@ -26,7 +28,8 @@ module Lopata
         @failed_steps.each do |step|
           if step.exception
             puts step.exception.message
-            puts step.exception.backtrace.join("\n")
+            puts
+            puts format_backtrace(step.exception.backtrace)
             puts
           end
         end
@@ -56,6 +59,11 @@ module Lopata
 
       def wrap(text, code)
         "\e[#{code}m#{text}\e[0m"
+      end
+
+      def format_backtrace(backtrace)
+        @formatter ||= Lopata::Observers::BacktraceFormatter.new
+        @formatter.format(backtrace).join("\n")
       end
     end
   end

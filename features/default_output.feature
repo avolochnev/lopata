@@ -20,3 +20,19 @@ Feature: Output results
       Multi-level metadata as a method two PASSED
       """
 
+  Scenario: Backtrace filtering
+    Given a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Failed' do
+        it 'fails' do
+          expect(1).to eq 2
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "scenario.rb:3"
+    And the output should not contain "rspec"
+    And the output should not contain "thor"
+    And the output should not contain "gems"
+
+

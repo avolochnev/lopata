@@ -1,5 +1,6 @@
 require 'httparty'
 require 'json'
+require_relative 'backtrace_formatter'
 
 module Lopata
   module Observers
@@ -40,7 +41,8 @@ module Lopata
         exception = scenario.steps.map(&:exception).compact.last
         msg = ''
         if exception
-          msg = exception.backtrace.join("\n")
+          @backtrace_formatter ||= Lopata::Observers::BacktraceFormatter.new
+          msg = @backtrace_formatter.format(exception.backtrace).join("\n")
           msg << "\n"
         end
         msg
