@@ -19,8 +19,8 @@ module Lopata
         return unless scenario.failed?
 
         scenario.steps_in_running_order.each do |step|
-          puts colored("#{status_marker(step.status)} #{step.title}", step.status)
-          puts backtrace_formatter.error_message(step.exception, include_backtrace: true) if step.failed?
+          puts colored("  #{status_marker(step.status)} #{step.title}", step.status)
+          puts indent(4, backtrace_formatter.error_message(step.exception, include_backtrace: true)) if step.failed?
         end
       end
 
@@ -65,6 +65,14 @@ module Lopata
         when :skipped then "[-]"
         else "[+]"
         end
+      end
+
+      # Adds indent to text
+      # @param cols [Number] number of spaces to be added
+      # @param text [String] text to add indent
+      # @return [String] text with indent
+      def indent(cols, text)
+        text.split("\n").map { |line| " " * cols + line }.join("\n")
       end
     end
   end

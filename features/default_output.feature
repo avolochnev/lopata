@@ -79,17 +79,17 @@ Feature: Output results
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain:
       """
-      [+] Setup empty data array
-      [+] Untitled action
-      [!] works
+        [+] Setup empty data array
+        [+] Untitled action
+        [!] works
       """
     And the output should contain:
       """
-      [!] Action stop testing
+        [!] Action stop testing
       """
     And the output should contain:
       """
-      [-] skipped
-      [+] Teardown empty data array
+        [-] skipped
+        [+] Teardown empty data array
       """
     And the output should contain "1 scenario (1 failed)"
