@@ -11,7 +11,7 @@ module Lopata
     end
 
     def self.find(name)
-      @shared_steps[name] or raise StandardError, "Shared step '%s' not found" % name
+      @shared_steps[name] or raise SharedStepNotFound, "Shared step '%s' not found" % name
     end
 
     def initialize(name, &block)

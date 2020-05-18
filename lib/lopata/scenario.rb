@@ -25,7 +25,7 @@ class Lopata::Scenario
     when Hash
       metadata_key.keys.all? { |k| metadata[k] == metadata_key[k] }
     when Array
-      metadata_key.map { |key| metadata[key] }.none?(&:nil?)
+      metadata_key.map { |key| metadata[key] }.all?
     else
       metadata[metadata_key]
     end
@@ -50,15 +50,15 @@ class Lopata::Scenario
 
   private
 
-    def method_missing(method, *args, &block)
-      if metadata.keys.include?(method)
-        metadata[method]
-      else
-        super
-      end
+  def method_missing(method, *args, &block)
+    if metadata.keys.include?(method)
+      metadata[method]
+    else
+      super
     end
+  end
 
-    def respond_to_missing?(method, *)
-      metadata.keys.include?(method) or super
-    end
+  def respond_to_missing?(method, *)
+    metadata.keys.include?(method) or super
+  end
 end

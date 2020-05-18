@@ -12,49 +12,20 @@ module Lopata
       end
 
       def scenario_finished(scenario)
-        if scenario.failed?
-          backtrace = backtrace_for(scenario)
-          @client.add_attempt(scenario, Lopata::FAILED, error_message_for(scenario), backtrace)
-        else
-          @client.add_attempt(scenario, Lopata::PASSED)
-        end
+        @client.add_attempt(scenario)
       end
 
       # def example_pending(notification)
       #   example = notification.example
       #   @client.add_attempt(example, Lopata::PENDING, example.execution_result.pending_message)
       # end
-
-      private
-
-      def error_message_for(scenario)
-        exception = scenario.steps.map(&:exception).compact.last
-        if exception
-          backtrace_formatter.error_message(exception)
-        else
-          'Empty error message'
-        end
-      end
-
-      def backtrace_for(scenario)
-        exception = scenario.steps.map(&:exception).compact.last
-        msg = ''
-        if exception
-          msg = backtrace_formatter.format(exception.backtrace).join("\n")
-          msg << "\n"
-        end
-        msg
-      end
-
-      def backtrace_formatter
-        @backtrace_formatter ||= Lopata::Observers::BacktraceFormatter.new
-      end
     end
   end
 
   PASSED = 0
   FAILED = 1
   PENDING = 2
+  SKIPPED = 5
 
   class Client
     include HTTParty
@@ -70,13 +41,22 @@ module Lopata
       @launch_id = JSON.parse(post("/projects/#{project_code}/builds/#{build_number}/launches.json", body: {total: count}).body)['id']
     end
 
-    def add_attempt(scenario, status, msg = nil, backtrace = nil)
+    def add_attempt(scenario)
+      status = scenario.failed? ? Lopata::FAILED : Lopata::PASSED
+      steps = scenario.steps.map { |s| step_hash(s) }
+      request = { status: status, steps: steps }
       test = test_id(scenario)
-      request = { status: status}
-      request[:message] = msg if msg
-      request[:backtrace] = backtrace if backtrace
       post("/tests/#{test}/attempts.json", body: request)
       inc_finished
+    end
+
+    def step_hash(step)
+      hash = { status: step.status, title: step.title }
+      if step.failed?
+        hash[:message] = error_message_for(step)
+        hash[:backtrace] = backtrace_for(step)
+      end
+      hash
     end
 
     def test_id(scenario)
@@ -128,6 +108,27 @@ module Lopata
 
     def project_code
       Lopata::Config.lopata_code
+    end
+
+    def error_message_for(step)
+      if step.exception
+        backtrace_formatter.error_message(step.exception)
+      else
+        'Empty error message'
+      end
+    end
+
+    def backtrace_for(step)
+      msg = ''
+      if step.exception
+        msg = backtrace_formatter.format(step.exception.backtrace).join("\n")
+        msg << "\n"
+      end
+      msg
+    end
+
+    def backtrace_formatter
+      @backtrace_formatter ||= Lopata::Observers::BacktraceFormatter.new
     end
   end
 end
