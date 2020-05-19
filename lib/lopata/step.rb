@@ -59,7 +59,7 @@ module Lopata
     end
 
     def skip_rest_on_failure?
-      %i{ action }.include?(@method_name)
+      %i{ setup action }.include?(@method_name)
     end
 
     def pre_steps(scenario)
