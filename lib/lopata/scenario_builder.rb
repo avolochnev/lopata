@@ -17,14 +17,10 @@ class Lopata::ScenarioBuilder
       metadata = common_metadata.merge(option_set.metadata)
       scenario = Lopata::Scenario.new(title, option_set.title, metadata)
 
-      steps.each do |step|
+      steps_with_hooks.each do |step|
         next if step.condition && !step.condition.match?(scenario)
         step.pre_steps(scenario).each { |s| scenario.steps << s }
         scenario.steps << step if step.block
-      end
-
-      if Lopata::Config.after_scenario
-        scenario.steps << Lopata::Step.new(:after_scenario, &Lopata::Config.after_scenario)
       end
 
       world.scenarios << scenario
@@ -83,6 +79,21 @@ class Lopata::ScenarioBuilder
 
   def steps
     @steps ||= []
+  end
+
+  def steps_with_hooks
+    s = []
+    unless Lopata::Config.before_scenario_steps.empty?
+      s << Lopata::ActionStep.new(:setup, *Lopata::Config.before_scenario_steps)
+    end
+
+    s += steps
+
+    if Lopata::Config.after_scenario
+      s << Lopata::Step.new(:teardown, &Lopata::Config.after_scenario)
+    end
+
+    s
   end
 
   def cleanup(*args, &block)

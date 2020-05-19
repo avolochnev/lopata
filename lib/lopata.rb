@@ -17,4 +17,8 @@ module Lopata
   def self.shared_step(name, &block)
     Lopata::SharedStep.register(name, &block)
   end
+
+  def self.configure(&block)
+    yield Lopata::Config
+  end
 end

@@ -30,7 +30,7 @@ module Lopata
         case status
         when :failed then red(text)
         when :passed then green(text)
-        when :skipped then green(text)
+        when :skipped then cyan(text)
         else text
         end
       end

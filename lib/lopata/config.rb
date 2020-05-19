@@ -41,10 +41,7 @@ module Lopata
     end
 
     def init_active_record
-      require 'lopata/rspec/ar_dsl'
-      ::RSpec.configure do |c|
-        c.include Lopata::RSpec::AR::DSL
-      end
+      require 'lopata/active_record'
     end
 
     def init_lopata_logging(build)
@@ -84,6 +81,14 @@ module Lopata
 
     def before_start(&block)
       @before_start = block
+    end
+
+    def before_scenario(*steps)
+      before_scenario_steps.append(*steps)
+    end
+
+    def before_scenario_steps
+      @before_scenario_steps ||= []
     end
 
     def initialize_test

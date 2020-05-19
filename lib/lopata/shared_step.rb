@@ -6,12 +6,11 @@ module Lopata
 
     def self.register(name, &block)
       raise ArgumentError, "Comma is not allowed in shared step name: '%s'" % name if name =~ /,/
-      @shared_steps ||= {}
-      @shared_steps[name] = new(name, &block)
+      registry[name] = new(name, &block)
     end
 
     def self.find(name)
-      @shared_steps[name] or raise SharedStepNotFound, "Shared step '%s' not found" % name
+      registry[name] or raise SharedStepNotFound, "Shared step '%s' not found" % name
     end
 
     def initialize(name, &block)
@@ -27,6 +26,12 @@ module Lopata
       builder.shared_step = self
       builder.instance_exec(&block)
       builder.steps
+    end
+
+    private
+
+    def self.registry
+      @shared_steps ||= {}
     end
   end
 end
