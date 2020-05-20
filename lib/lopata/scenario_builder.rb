@@ -15,12 +15,12 @@ class Lopata::ScenarioBuilder
   def build
     option_combinations.each do |option_set|
       metadata = common_metadata.merge(option_set.metadata)
-      scenario = Lopata::Scenario.new(title, option_set.title, metadata)
+      scenario = Lopata::Scenario::Execution.new(title, option_set.title, metadata)
 
       steps_with_hooks.each do |step|
         next if step.condition && !step.condition.match?(scenario)
-        step.pre_steps(scenario).each { |s| scenario.execution.steps << s }
-        scenario.execution.steps << Lopata::StepExecution.new(step, &step.block) if step.block
+        step.pre_steps(scenario).each { |s| scenario.steps << s }
+        scenario.steps << Lopata::StepExecution.new(step, &step.block) if step.block
       end
 
       world.scenarios << scenario

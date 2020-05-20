@@ -5,7 +5,7 @@ module Lopata
     class ConsoleOutputObserver < BaseObserver
       def finished(world)
         total = world.scenarios.length
-        statuses = world.scenarios.map(&:execution).map(&:status)
+        statuses = world.scenarios.map(&:status)
         counts = statuses.uniq.map do |status|
           colored("%d %s", status) % [statuses.count { |s| s == status }, status]
         end
@@ -31,24 +31,21 @@ module Lopata
         when :failed then red(text)
         when :passed then green(text)
         when :skipped then cyan(text)
+        when :pending then yellow(text)
         else text
         end
       end
 
-      def red(text)
-        wrap(text, 31)
-      end
-
-      def green(text)
-        wrap(text, 32)
-      end
-
-      def cyan(text)
-        wrap(text, 36)
-      end
-
-      def bold(text)
-        wrap(text, 1)
+      {
+        red: 31,
+        green: 32,
+        cyan: 36,
+        yellow: 33,
+        bold: 1,
+      }.each do |color, code|
+        define_method(color) do |text|
+          wrap(text, code)
+        end
       end
 
       def wrap(text, code)
@@ -63,6 +60,7 @@ module Lopata
         case status
         when :failed then "[!]"
         when :skipped then "[-]"
+        when :pending then "[?]"
         else "[+]"
         end
       end

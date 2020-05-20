@@ -1,17 +1,19 @@
 require 'rspec/expectations'
 
 class Lopata::Scenario
+  extend Forwardable
   include RSpec::Matchers
 
-  attr_reader :title, :metadata
+  attr_reader :execution
+  def_delegators :execution, :metadata
 
-  def initialize(title, options_title, metadata = {})
-    @title = [title, options_title].compact.reject(&:empty?).join(' ')
-    @metadata = metadata
+  def initialize(execution)
+    @execution = execution
   end
 
-  def execution
-    @execution ||= Execution.new(self)
+  # Marks current step as pending
+  def pending(message = nil)
+    execution.current_step.pending!(message)
   end
 
   private
@@ -29,26 +31,27 @@ class Lopata::Scenario
   end
 
   class Execution
-    extend Forwardable
-    attr_reader :scenario, :status, :steps
-    def_delegators :scenario, :title
+    attr_reader :metadata, :scenario, :status, :steps, :title, :current_step
 
-    def initialize(scenario)
-      @scenario = scenario
+    def initialize(title, options_title, metadata = {})
+      @title = [title, options_title].compact.reject(&:empty?).join(' ')
+      @metadata = metadata
       @status = :not_runned
       @steps = []
+      @scenario = Lopata::Scenario.new(self)
     end
 
     def run
       @status = :running
       world.notify_observers(:scenario_started, self)
       steps_in_running_order.each(&method(:run_step))
-      @status = steps.all?(&:passed?) ? :passed : :failed
+      @status = steps.any?(&:failed?) ? :failed : :passed
       world.notify_observers(:scenario_finished, self)
     end
 
     def run_step(step)
       return if step.skipped?
+      @current_step = step
       step.run(scenario)
       skip_rest if step.failed? && step.skip_rest_on_failure?
     end

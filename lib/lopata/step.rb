@@ -97,9 +97,11 @@ module Lopata
   end
 
   class StepExecution
-    attr_reader :step, :status, :exception, :block
+    attr_reader :step, :status, :exception, :block, :pending_message
     extend Forwardable
     def_delegators :step, :title, :group, :method_name
+
+    class PendingStepFixedError < StandardError; end
 
     def initialize(step, &block)
       @step = step
@@ -113,9 +115,14 @@ module Lopata
       world.notify_observers(:step_started, self)
       begin
         run_step(scenario)
-        @status = :passed
+        if pending?
+          @status = :failed
+          raise PendingStepFixedError, 'Expected step to fail since it is pending, but it passed.'
+        else
+          @status = :passed
+        end
       rescue Exception => e
-        @status = :failed
+        @status = :failed unless pending?
         @exception = e
       end
       world.notify_observers(:step_finished, self)
@@ -144,6 +151,15 @@ module Lopata
 
     def skip!
       @status = :skipped
+    end
+
+    def pending?
+      status == :pending
+    end
+
+    def pending!(message = nil)
+      @status = :pending
+      @pending_message = message
     end
 
     def teardown?
