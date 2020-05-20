@@ -2,7 +2,7 @@ module Lopata
   class SharedStep
     attr_reader :name, :block
 
-    class SharedStepNotFound < StandardError; end
+    class NotFound < StandardError; end
 
     def self.register(name, &block)
       raise ArgumentError, "Comma is not allowed in shared step name: '%s'" % name if name =~ /,/
@@ -10,7 +10,7 @@ module Lopata
     end
 
     def self.find(name)
-      registry[name] or raise SharedStepNotFound, "Shared step '%s' not found" % name
+      registry[name] or raise NotFound, "Shared step '%s' not found" % name
     end
 
     def initialize(name, &block)

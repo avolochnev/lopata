@@ -3,7 +3,7 @@ module Lopata
     extend self
 
     attr_accessor :build_number, :lopata_host, :lopata_code, :only_roles, :role_descriptions, :after_as,
-                  :default_role, :ops, :after_scenario
+                  :default_role, :ops
 
     def init(env)
       require 'yaml'
@@ -38,10 +38,6 @@ module Lopata
         c.include Lopata::RSpec::Role
       end
       init_rspec_filters
-    end
-
-    def init_active_record
-      require 'lopata/active_record'
     end
 
     def init_lopata_logging(build)
@@ -83,12 +79,22 @@ module Lopata
       @before_start = block
     end
 
-    def before_scenario(*steps)
-      before_scenario_steps.append(*steps)
+    def before_scenario(*steps, &block)
+      before_scenario_steps.append(*steps) unless steps.empty?
+      before_scenario_steps.append(block) if block_given?
     end
 
     def before_scenario_steps
       @before_scenario_steps ||= []
+    end
+
+    def after_scenario(*steps, &block)
+      before_scenario_steps.append(*steps) unless steps.empty?
+      before_scenario_steps.append(block) if block_given?
+    end
+
+    def after_scenario_steps
+      @after_scenario_steps ||= []
     end
 
     def initialize_test

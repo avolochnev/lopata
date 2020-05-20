@@ -40,12 +40,11 @@ class Lopata::Scenario
   end
 
   def steps_in_running_order
-    @steps.reject(&:teardown?) + @steps.select(&:teardown?)
+    @steps.reject(&:teardown_group?) + @steps.select(&:teardown_group?)
   end
 
   def skip_rest
     @steps.select { |s| s.status == :not_runned && !s.teardown? }.each(&:skip!)
-
   end
 
   private

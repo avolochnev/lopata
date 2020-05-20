@@ -1,6 +1,6 @@
 class Lopata::ScenarioBuilder
   attr_reader :title, :common_metadata
-  attr_accessor :shared_step
+  attr_accessor :shared_step, :group
 
   def self.define(title, metadata = {}, &block)
     builder = new(title, metadata)
@@ -20,7 +20,7 @@ class Lopata::ScenarioBuilder
       steps_with_hooks.each do |step|
         next if step.condition && !step.condition.match?(scenario)
         step.pre_steps(scenario).each { |s| scenario.steps << s }
-        scenario.steps << step if step.block
+        scenario.steps << Lopata::StepExecution.new(step, &step.block) if step.block
       end
 
       world.scenarios << scenario
@@ -55,26 +55,28 @@ class Lopata::ScenarioBuilder
     @skip_when && @skip_when.call(option_set)
   end
 
-  %i{ setup action it teardown }.each do |name|
+  %i{ setup action it teardown verify context }.each do |name|
     name_if = "%s_if" % name
     name_unless = "%s_unless" % name
-    define_method name, ->(*args, &block) { add_step(name, *args, &block) }
-    define_method name_if, ->(condition, *args, &block) {
-      add_step(name, *args, condition: Lopata::Condition.new(condition), &block)
+    define_method name, ->(*args, **metadata, &block) { add_step(name, *args, metadata: metadata, &block) }
+    define_method name_if, ->(condition, *args, **metadata, &block) {
+      add_step(name, *args, metadata: metadata, condition: Lopata::Condition.new(condition), &block)
     }
-    define_method name_unless, ->(condition, *args, &block) {
-      add_step(name, *args, condition: Lopata::Condition.new(condition, positive: false), &block)
+    define_method name_unless, ->(condition, *args, **metadata, &block) {
+      add_step(name, *args, condition: Lopata::Condition.new(condition, positive: false), metadata: metadata, &block)
     }
   end
 
-  def add_step(method_name, *args, condition: nil, &block)
+  def add_step(method_name, *args, condition: nil, metadata: {}, &block)
     step_class =
-      if method_name =~ /^(setup|action|teardown)/
-        Lopata::ActionStep
-      else
-        Lopata::Step
+      case method_name
+      when /^(setup|action|teardown|verify)/ then Lopata::ActionStep
+      when /^(context)/ then Lopata::GroupStep
+      else Lopata::Step
       end
-    steps << step_class.new(method_name, *args, condition: condition, shared_step: shared_step, &block)
+    step = step_class.new(method_name, *args, condition: condition, shared_step: shared_step, group: group, &block)
+    step.metadata = metadata
+    steps << step
   end
 
   def steps
@@ -89,8 +91,8 @@ class Lopata::ScenarioBuilder
 
     s += steps
 
-    if Lopata::Config.after_scenario
-      s << Lopata::Step.new(:teardown, &Lopata::Config.after_scenario)
+    unless Lopata::Config.after_scenario_steps.empty?
+      s << Lopata::ActionStep.new(:teardown, *Lopata::Config.after_scenario_steps)
     end
 
     s

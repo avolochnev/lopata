@@ -7,7 +7,7 @@ module Lopata
         objects.flatten.compact.each do |o|
           begin
             o.reload.destroy!
-          rescue ActiveRecord::RecordNotFound
+          rescue ::ActiveRecord::RecordNotFound
             # Already destroyed
           end
         end
