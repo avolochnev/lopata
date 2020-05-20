@@ -19,8 +19,8 @@ class Lopata::ScenarioBuilder
 
       steps_with_hooks.each do |step|
         next if step.condition && !step.condition.match?(scenario)
-        step.pre_steps(scenario).each { |s| scenario.steps << s }
-        scenario.steps << Lopata::StepExecution.new(step, &step.block) if step.block
+        step.pre_steps(scenario).each { |s| scenario.execution.steps << s }
+        scenario.execution.steps << Lopata::StepExecution.new(step, &step.block) if step.block
       end
 
       world.scenarios << scenario

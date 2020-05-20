@@ -117,7 +117,6 @@ module Lopata
       rescue Exception => e
         @status = :failed
         @exception = e
-        scenario.skip_rest if skip_rest_on_failure?
       end
       world.notify_observers(:step_finished, self)
     end

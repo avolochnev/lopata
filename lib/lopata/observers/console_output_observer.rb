@@ -5,7 +5,7 @@ module Lopata
     class ConsoleOutputObserver < BaseObserver
       def finished(world)
         total = world.scenarios.length
-        statuses = world.scenarios.map(&:status)
+        statuses = world.scenarios.map(&:execution).map(&:status)
         counts = statuses.uniq.map do |status|
           colored("%d %s", status) % [statuses.count { |s| s == status }, status]
         end

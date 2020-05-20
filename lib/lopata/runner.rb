@@ -24,7 +24,7 @@ module Lopata
       Lopata::Loader.load_scenarios(*args)
       world = Lopata::Config.world
       world.start
-      world.scenarios.each { |s| s.run }
+      world.scenarios.each { |s| s.execution.run }
       world.finish
     end
 
