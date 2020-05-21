@@ -2,7 +2,7 @@ module Lopata
   module Config
     extend self
 
-    attr_accessor :build_number, :lopata_host, :lopata_code, :only_roles, :role_descriptions, :after_as,
+    attr_accessor :build_number, :lopata_host, :lopata_code, :only_roles, :role_descriptions,
                   :default_role, :ops
 
     def init(env)
@@ -103,6 +103,10 @@ module Lopata
 
     def world
       @world ||= Lopata::World.new
+    end
+
+    def filters
+      @filters ||= []
     end
 
     def add_observer(observer)

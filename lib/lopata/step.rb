@@ -9,7 +9,7 @@ module Lopata
       @args = args
       @block = block
       @shared_step = shared_step
-      @condition = condition || Lopata::Condition::EMPTY
+      @condition = condition
       @group = group
       initialized! if defined? initialized!
     end
@@ -24,25 +24,29 @@ module Lopata
       end
     end
 
-    def pre_steps(scenario)
-      []
+    def execution_steps(scenario, groups: [])
+      return [] if condition && !condition.match?(scenario)
+      return [] unless block
+      [StepExecution.new(self, groups, &block)]
     end
   end
 
   # Used for action, setup, teardown
   class ActionStep < Step
-    def pre_steps(scenario)
+    def execution_steps(scenario, groups: [])
       steps = []
+      return steps if condition && !condition.match?(scenario)
       convert_args(scenario).each do |step|
         if step.is_a?(String)
           Lopata::SharedStep.find(step).steps.each do |shared_step|
-            steps += shared_step.pre_steps(scenario)
-            steps << StepExecution.new(shared_step, &shared_step.block) if shared_step.block
+            next if shared_step.condition && !shared_step.condition.match?(scenario)
+            steps += shared_step.execution_steps(scenario, groups: groups)
           end
         elsif step.is_a?(Proc)
-          steps << StepExecution.new(self, &step)
+          steps << StepExecution.new(self, groups, &step)
         end
       end
+      steps << StepExecution.new(self, groups, &block) if block
       steps.reject { |s| !s.block }
     end
 
@@ -74,11 +78,11 @@ module Lopata
   # Used for context
   class GroupStep < Step
 
-    def pre_steps(scenario)
+    def execution_steps(scenario, groups: [])
       steps = []
+      return steps if condition && !condition.match?(scenario)
       @steps.each do |step|
-        steps += step.pre_steps(scenario)
-        steps << StepExecution.new(step, &step.block) if step.block
+        steps += step.execution_steps(scenario, groups: groups + [self])
       end
       steps.reject! { |s| !s.block }
       steps.reject { |s| s.teardown_group?(self) } + steps.select { |s| s.teardown_group?(self) }
@@ -97,17 +101,18 @@ module Lopata
   end
 
   class StepExecution
-    attr_reader :step, :status, :exception, :block, :pending_message
+    attr_reader :step, :status, :exception, :block, :pending_message, :groups
     extend Forwardable
-    def_delegators :step, :title, :group, :method_name
+    def_delegators :step, :title, :method_name
 
     class PendingStepFixedError < StandardError; end
 
-    def initialize(step, &block)
+    def initialize(step, groups, &block)
       @step = step
       @status = :not_runned
       @exception = nil
       @block = block
+      @groups = groups
     end
 
     def run(scenario)
@@ -167,11 +172,16 @@ module Lopata
     end
 
     def teardown_group?(group = nil)
-      teardown? && self.group == group
+      teardown? && self.groups.last == group
     end
 
     def skip_rest_on_failure?
       %i{ setup action }.include?(method_name)
+    end
+
+    # Step metadata is a combination of metadata given for step and all contexts (groups) the step included
+    def metadata
+      ([step] + groups).compact.inject({}) { |merged, part| merged.merge(part.metadata) }
     end
   end
 end

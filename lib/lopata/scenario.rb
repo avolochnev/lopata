@@ -1,11 +1,9 @@
 require 'rspec/expectations'
 
 class Lopata::Scenario
-  extend Forwardable
   include RSpec::Matchers
 
   attr_reader :execution
-  def_delegators :execution, :metadata
 
   def initialize(execution)
     @execution = execution
@@ -14,6 +12,10 @@ class Lopata::Scenario
   # Marks current step as pending
   def pending(message = nil)
     execution.current_step.pending!(message)
+  end
+
+  def metadata
+    execution.metadata
   end
 
   private
@@ -31,7 +33,7 @@ class Lopata::Scenario
   end
 
   class Execution
-    attr_reader :metadata, :scenario, :status, :steps, :title, :current_step
+    attr_reader :scenario, :status, :steps, :title, :current_step
 
     def initialize(title, options_title, metadata = {})
       @title = [title, options_title].compact.reject(&:empty?).join(' ')
@@ -70,6 +72,14 @@ class Lopata::Scenario
 
     def skip_rest
       steps.select { |s| s.status == :not_runned && !s.teardown? }.each(&:skip!)
+    end
+
+    def metadata
+      if current_step
+        @metadata.merge(current_step.metadata)
+      else
+        @metadata
+      end
     end
   end
 end

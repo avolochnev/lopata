@@ -20,7 +20,6 @@ module Lopata::RSpec::Role
       else
         Lopata::RSpec::Role.filter_roles(*names).each do |name|
           example_group_class = describe role_description(name), :current_role => name do
-            instance_exec &Lopata::Config.after_as if Lopata::Config.after_as
             define_method :current_role do
               name
             end

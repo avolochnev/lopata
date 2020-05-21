@@ -5,8 +5,6 @@ module Lopata
       @condition, @positive = condition, positive
     end
 
-    EMPTY = new({})
-
     alias positive? positive
 
     def match?(scenario)

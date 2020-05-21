@@ -13,14 +13,18 @@ class Lopata::ScenarioBuilder
   end
 
   def build
+    filters = Lopata::Config.filters
     option_combinations.each do |option_set|
       metadata = common_metadata.merge(option_set.metadata)
       scenario = Lopata::Scenario::Execution.new(title, option_set.title, metadata)
 
+      unless filters.empty?
+        next unless filters.all? { |f| f[scenario] }
+      end
+
       steps_with_hooks.each do |step|
         next if step.condition && !step.condition.match?(scenario)
-        step.pre_steps(scenario).each { |s| scenario.steps << s }
-        scenario.steps << Lopata::StepExecution.new(step, &step.block) if step.block
+        step.execution_steps(scenario).each { |s| scenario.steps << s }
       end
 
       world.scenarios << scenario

@@ -49,6 +49,11 @@ module Lopata
         }
         Lopata::Config.init(options[:env])
         Lopata::Config.initialize_test
+        add_text_filter(options[:text]) if options[:text]
+      end
+
+      def add_text_filter(text)
+        Lopata::Config.filters << -> (scenario) { scenario.title.include?(text) }
       end
     end
   end

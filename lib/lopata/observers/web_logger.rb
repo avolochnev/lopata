@@ -43,7 +43,7 @@ module Lopata
 
     def add_attempt(scenario)
       status = scenario.failed? ? Lopata::FAILED : Lopata::PASSED
-      steps = scenario.steps.map { |s| step_hash(s) }
+      steps = scenario.steps_in_running_order.map { |s| step_hash(s) }
       request = { status: status, steps: steps }
       test = test_id(scenario)
       post("/tests/#{test}/attempts.json", body: request)

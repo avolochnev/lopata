@@ -91,4 +91,3 @@ Feature: Metadata
       """
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "2 scenarios (2 passed)"
-
