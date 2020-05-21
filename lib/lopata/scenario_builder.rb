@@ -209,10 +209,10 @@ class Lopata::ScenarioBuilder
   end
 
   class Variant
-    attr_reader :key, :title, :value
+    attr_reader :key, :title, :value, :option
 
-    def initialize(key, title, value)
-      @key, @title, @value = key, title, check_lambda_arity(value)
+    def initialize(option, key, title, value)
+      @option, @key, @title, @value = option, key, title, check_lambda_arity(value)
     end
 
     def metadata(option_set)
@@ -222,6 +222,10 @@ class Lopata::ScenarioBuilder
           sub_key = "%s_%s" % [key, k]
           data[sub_key.to_sym] = v
         end
+      end
+
+      option.available_metadata_keys.each do |key|
+        data[key] = nil unless data.has_key?(key)
       end
 
       data.each do |key, v|
@@ -263,14 +267,15 @@ class Lopata::ScenarioBuilder
   end
 
   class Option
-    attr_reader :variants
+    attr_reader :variants, :key
     def initialize(key, variants)
+      @key = key
       @variants =
         if variants.is_a? Hash
-          variants.map { |title, value| Variant.new(key, title, value) }
+          variants.map { |title, value| Variant.new(self, key, title, value) }
         else
           # Array of arrays of two elements
-          variants.map { |v| Variant.new(key, *v) }
+          variants.map { |v| Variant.new(self, key, *v) }
         end
     end
 
@@ -288,6 +293,11 @@ class Lopata::ScenarioBuilder
         @complete = true # all variants have been selected
       end
       selected_variant
+    end
+
+    def available_metadata_keys
+      @available_metadata_keys ||= variants
+        .map(&:value).select { |v| v.is_a?(Hash) }.flat_map(&:keys).map { |k| "#{key}_#{k}".to_sym  }.uniq
     end
   end
 

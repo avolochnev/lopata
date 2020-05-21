@@ -51,11 +51,15 @@ Feature: Metadata
       """ruby
       Lopata.define 'Multi-level metadata as a method' do
         diagonal :number,
-          'one' => { source: 1, target: 1 },
+          'one' => { source: 1, target: 1, defined?: true },
           'two' => { source: 2, target: 4 }
 
         it 'passed' do
           expect(number_source * number_source).to eq number_target
+        end
+
+        it('methods defined for diagonal even if decared in other part') do
+          expect(defined? number_defined?).to be_truthy
         end
       end
       """

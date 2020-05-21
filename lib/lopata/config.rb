@@ -89,8 +89,8 @@ module Lopata
     end
 
     def after_scenario(*steps, &block)
-      before_scenario_steps.append(*steps) unless steps.empty?
-      before_scenario_steps.append(block) if block_given?
+      after_scenario_steps.append(*steps) unless steps.empty?
+      after_scenario_steps.append(block) if block_given?
     end
 
     def after_scenario_steps
