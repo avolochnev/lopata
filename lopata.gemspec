@@ -11,7 +11,7 @@ Gem::Specification.new do |s|
   s.email       = "alexey.volochnev@gmail.com"
   s.homepage    = "https://github.com/avolochnev/lopata"
   s.summary     = "lopata-#{Lopata::Version::STRING}"
-  s.description = "Functional acceptance tesging"
+  s.description = "Functional acceptance testing"
 
   s.files            = `git ls-files -- lib/*`.split("\n")
   s.files           += %w[README.md exe/lopata]
