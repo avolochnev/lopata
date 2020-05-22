@@ -46,32 +46,13 @@ module Lopata
       add_observer Lopata::Observers::WebLogger.new
     end
 
-    def init_rerun
-      ::RSpec.configure do |c|
-        c.inclusion_filter = { full_description: build_rerun_filter_proc }
-      end
-    end
-
     def init_rspec_filters
       filters = {}
       filters[:focus] = true if ops[:focus]
-      if ops[:rerun]
-        filters[:full_description] = build_rerun_filter_proc
-      end
-      if ops[:text]
-        filters[:full_description] = ->(desc) { desc.include?(ops[:text]) }
-      end
       unless filters.blank?
         ::RSpec.configure do |c|
           c.inclusion_filter = filters
         end
-      end
-    end
-
-    def build_rerun_filter_proc
-      to_rerun = Lopata::Client.new(Lopata::Config.build_number).to_rerun
-      Proc.new do |desc|
-        to_rerun.include?(desc)
       end
     end
 

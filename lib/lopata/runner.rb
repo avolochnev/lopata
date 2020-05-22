@@ -40,20 +40,25 @@ module Lopata
       def configure_from_options
         Lopata::Config.ops = {
           focus: options[:focus],
-          rerun: options[:rerun],
           users: options[:users],
           build: options[:build],
           env:   options[:env],
           keep:  options[:keep],
-          text:  options[:text]
         }
         Lopata::Config.init(options[:env])
         Lopata::Config.initialize_test
         add_text_filter(options[:text]) if options[:text]
+        add_rerun_filter if options[:rerun]
       end
 
       def add_text_filter(text)
         Lopata::Config.filters << -> (scenario) { scenario.title.include?(text) }
+      end
+
+      def add_rerun_filter
+        to_rerun = Lopata::Client.new(Lopata::Config.build_number).to_rerun
+        puts to_rerun
+        Lopata::Config.filters << -> (scenario) { to_rerun.include?(scenario.title) }
       end
     end
   end

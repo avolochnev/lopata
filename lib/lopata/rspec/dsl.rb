@@ -11,7 +11,7 @@ module Lopata
             if context.is_a?(Proc)
               action(&context)
             else
-              include_context context
+              verify context
             end
           end
           before(:all, &block) if block_given?
