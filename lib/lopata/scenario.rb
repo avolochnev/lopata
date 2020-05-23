@@ -49,6 +49,7 @@ class Lopata::Scenario
       steps_in_running_order.each(&method(:run_step))
       @status = steps.any?(&:failed?) ? :failed : :passed
       world.notify_observers(:scenario_finished, self)
+      @scenario = nil # cleanup memory after scenario executon
     end
 
     def run_step(step)
