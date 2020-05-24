@@ -5,7 +5,7 @@ module Lopata
       attr_accessor :exclusion_patterns, :inclusion_patterns
 
       def initialize
-        patterns = %w[ /lib\d*/ruby/ bin/ exe/lopata /lib/bundler/ /exe/bundle: ]
+        patterns = %w[ /lib\d*/ruby/ bin/ exe/lopata /lib/bundler/ /exe/bundle /\.rvm/ ]
         patterns.map! { |s| Regexp.new(s.gsub("/", File::SEPARATOR)) }
 
         @exclusion_patterns = [Regexp.union(*patterns)]
