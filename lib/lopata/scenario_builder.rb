@@ -78,7 +78,7 @@ class Lopata::ScenarioBuilder
       when /^(context)/ then Lopata::GroupStep
       else Lopata::Step
       end
-    step = step_class.new(method_name, *args, condition: condition, shared_step: shared_step, group: group, &block)
+    step = step_class.new(method_name, *args, condition: condition, shared_step: shared_step, &block)
     step.metadata = metadata
     steps << step
   end

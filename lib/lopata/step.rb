@@ -1,27 +1,22 @@
 module Lopata
   class Step
-    attr_reader :block, :args, :condition, :method_name, :shared_step, :group
+    attr_reader :block, :args, :condition, :method_name, :shared_step
     # metadata overrien by the step.
     attr_accessor :metadata
 
-    def initialize(method_name, *args, condition: nil, shared_step: nil, group: nil, &block)
+    def initialize(method_name, *args, condition: nil, shared_step: nil, &block)
       @method_name = method_name
       @args = args
       @block = block
       @shared_step = shared_step
       @condition = condition
-      @group = group
       initialized! if defined? initialized!
     end
 
     def title
       base_title = args.first
       base_title ||= shared_step && "#{method_name.capitalize} #{shared_step.name}" || "Untitled #{method_name}"
-      if group
-        "#{group.title}: #{base_title}"
-      else
-        base_title
-      end
+      base_title
     end
 
     def execution_steps(scenario, groups: [])
@@ -67,11 +62,7 @@ module Lopata
     end
 
     def title
-      if group
-        "%s: %s" % [group.title, method_name]
-      else
-        shared_step && "#{method_name.capitalize} #{shared_step.name}" || "Untitled #{method_name}"
-      end
+      shared_step && "#{method_name.capitalize} #{shared_step.name}" || "Untitled #{method_name}"
     end
   end
 
@@ -93,7 +84,6 @@ module Lopata
     # Group step's block is a block in context of builder, not scenario. So hide the @block to not be used in scenario.
     def initialized!
       builder = Lopata::ScenarioBuilder.new(title)
-      builder.group = self
       builder.instance_exec(&@block)
       @steps = builder.steps
       @block = nil
@@ -103,7 +93,7 @@ module Lopata
   class StepExecution
     attr_reader :step, :status, :exception, :block, :pending_message, :groups
     extend Forwardable
-    def_delegators :step, :title, :method_name
+    def_delegators :step, :method_name
 
     class PendingStepFixedError < StandardError; end
 
@@ -113,6 +103,11 @@ module Lopata
       @exception = nil
       @block = block
       @groups = groups
+    end
+
+    def title
+      group_title = groups.map { |g| "#{g.title}: " }.join
+      "#{group_title}#{step.title}"
     end
 
     def run(scenario)
