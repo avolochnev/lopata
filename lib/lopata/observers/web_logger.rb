@@ -9,10 +9,12 @@ module Lopata
         raise "Build number is not initailzed in Lopata::Config" unless Lopata::Config.build_number
         @client = Lopata::Client.new(Lopata::Config.build_number)
         @client.start(world.scenarios.count)
+        @finished = 0
       end
 
       def scenario_finished(scenario)
-        @client.add_attempt(scenario)
+        @finished += 1
+        @client.add_attempt(scenario, @finished)
       end
 
       # def example_pending(notification)
@@ -41,13 +43,12 @@ module Lopata
       @launch_id = JSON.parse(post("/projects/#{project_code}/builds/#{build_number}/launches.json", body: {total: count}).body)['id']
     end
 
-    def add_attempt(scenario)
+    def add_attempt(scenario, finished)
       status = scenario.failed? ? Lopata::FAILED : Lopata::PASSED
-      steps = scenario.steps_in_running_order.map { |s| step_hash(s) }
-      request = { status: status, steps: steps }
+      steps = scenario.steps.map { |s| step_hash(s) }
+      request = { status: status, steps: steps, launch: { id: @launch_id, finished: finished }
       test = test_id(scenario)
       post("/tests/#{test}/attempts.json", body: request)
-      inc_finished
     end
 
     def step_hash(step)
@@ -92,18 +93,6 @@ module Lopata
 
     def patch(*args)
       self.class.patch(*args)
-    end
-
-    def inc_finished
-      @finished ||= 0
-      @finished += 1
-      response = patch("/launches/#{@launch_id}",
-        body: { finished: @finished }.to_json,
-        headers: { 'Content-Type' => 'application/json', 'Accept' => 'application/json' })
-      if response.code == 404
-        puts 'Launch has been cancelled. Exit.'
-        exit!
-      end
     end
 
     def project_code

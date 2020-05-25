@@ -3,11 +3,18 @@ require_relative 'backtrace_formatter'
 module Lopata
   module Observers
     class ConsoleOutputObserver < BaseObserver
+      extend Forwardable
+      attr_reader :output
+      def_delegators :output, :puts, :flush
+
+      def initialize
+        @output = $stdout
+      end
+
       def finished(world)
-        total = world.scenarios.length
-        statuses = world.scenarios.map(&:status)
-        counts = statuses.uniq.map do |status|
-          colored("%d %s", status) % [statuses.count { |s| s == status }, status]
+        total = statuses.values.inject(0, &:+)
+        counts = statuses.map do |status, count|
+          colored("%d %s", status) % [count, status]
         end
         details = counts.empty? ? "" : "(%s)" % counts.join(', ')
         puts "#{total} scenario%s %s" % [total == 1 ? '' : 's', details]
@@ -16,12 +23,18 @@ module Lopata
       def scenario_finished(scenario)
         message = "#{scenario.title} #{bold(scenario.status.to_s.upcase)}"
         puts colored(message, scenario.status)
-        return unless scenario.failed?
 
-        scenario.steps_in_running_order.each do |step|
-          puts colored("  #{status_marker(step.status)} #{step.title}", step.status)
-          puts indent(4, backtrace_formatter.error_message(step.exception, include_backtrace: true)) if step.failed?
+        statuses[scenario.status] ||= 0
+        statuses[scenario.status] += 1
+
+        if scenario.failed?
+          scenario.steps.each do |step|
+            puts colored("  #{status_marker(step.status)} #{step.title}", step.status)
+            puts indent(4, backtrace_formatter.error_message(step.exception, include_backtrace: true)) if step.failed?
+          end
         end
+
+        flush
       end
 
       private
@@ -71,6 +84,10 @@ module Lopata
       # @return [String] text with indent
       def indent(cols, text)
         text.split("\n").map { |line| " " * cols + line }.join("\n")
+      end
+
+      def statuses
+        @statuses ||= {}
       end
     end
   end

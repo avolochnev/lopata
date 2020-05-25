@@ -45,8 +45,9 @@ class Lopata::Scenario
 
     def run
       @status = :running
+      sort_steps
       world.notify_observers(:scenario_started, self)
-      steps_in_running_order.each(&method(:run_step))
+      steps.each(&method(:run_step))
       @status = steps.any?(&:failed?) ? :failed : :passed
       world.notify_observers(:scenario_finished, self)
       cleanup
@@ -57,6 +58,7 @@ class Lopata::Scenario
       @current_step = step
       step.run(scenario)
       skip_rest if step.failed? && step.skip_rest_on_failure?
+      @current_step = nil
     end
 
     def world
@@ -67,8 +69,8 @@ class Lopata::Scenario
       status == :failed
     end
 
-    def steps_in_running_order
-      steps.reject(&:teardown_group?) + steps.select(&:teardown_group?)
+    def sort_steps
+      @steps = steps.reject(&:teardown_group?) + steps.select(&:teardown_group?)
     end
 
     def skip_rest
