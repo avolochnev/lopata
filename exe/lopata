@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require 'bundler/setup'
-require_relative '../lib/lopata/runner'
+require 'lopata/runner'
 
 # use default command with arguments if given command is unknown.
 argv = ARGV.dup
