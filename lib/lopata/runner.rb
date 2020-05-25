@@ -26,10 +26,6 @@ module Lopata
       world.start
       world.scenarios.each { |s| s.run }
       world.finish
-    rescue NoMemoryError => e
-      puts "#{e.class}: #{e.message}"
-      puts e.backtrace.join("\n")
-      raise
     end
 
     default_task :test

@@ -51,6 +51,10 @@ class Lopata::Scenario
       @status = steps.any?(&:failed?) ? :failed : :passed
       world.notify_observers(:scenario_finished, self)
       cleanup
+    rescue NoMemoryError => e
+      puts "#{e.class}: #{e.message}"
+      puts e.backtrace.join("\n")
+      raise
     end
 
     def run_step(step)
