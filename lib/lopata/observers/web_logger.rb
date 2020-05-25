@@ -46,7 +46,7 @@ module Lopata
     def add_attempt(scenario, finished)
       status = scenario.failed? ? Lopata::FAILED : Lopata::PASSED
       steps = scenario.steps.map { |s| step_hash(s) }
-      request = { status: status, steps: steps, launch: { id: @launch_id, finished: finished }
+      request = { status: status, steps: steps, launch: { id: @launch_id, finished: finished } }
       test = test_id(scenario)
       post("/tests/#{test}/attempts.json", body: request)
     end
