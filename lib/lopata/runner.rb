@@ -57,7 +57,6 @@ module Lopata
 
       def add_rerun_filter
         to_rerun = Lopata::Client.new(Lopata::Config.build_number).to_rerun
-        puts to_rerun
         Lopata::Config.filters << -> (scenario) { to_rerun.include?(scenario.title) }
       end
     end

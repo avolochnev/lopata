@@ -102,18 +102,6 @@ class Lopata::ScenarioBuilder
     s
   end
 
-  def cleanup(*args, &block)
-    add_step_as_is(:cleanup, *args, &block)
-  end
-
-  def add_step_as_is(method_name, *args, &block)
-    steps << Lopata::Step.new(method_name, *args) do
-      # do not convert args - symbols mean name of instance variable
-      # run_step method_name, *args, &block
-      instance_exec(&block) if block
-    end
-  end
-
   def let(method_name, &block)
     steps << Lopata::Step.new(nil) do
       define_singleton_method method_name, &block
@@ -122,7 +110,7 @@ class Lopata::ScenarioBuilder
 
   def build_role_options
     return [] unless roles
-    [Diagonal.new(:as, roles.map { |r| [nil, r] })]
+    [Diagonal.new(:as, roles.map { |r| [Lopata::Config.role_descriptions[r], r] })]
   end
 
   def roles
