@@ -8,7 +8,10 @@ module Lopata
           begin
             o.reload.destroy!
           rescue ::ActiveRecord::RecordNotFound
-            # Already destroyed
+            # Already destroyed - skip
+          rescue ::ActiveRecord::InvalidForeignKey
+            # Possible async job created new relationships (e.g. history records). Try again once.
+            o.reload.destroy!
           end
         end
       end
