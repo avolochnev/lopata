@@ -18,7 +18,7 @@ module Lopata
       when Hash
         condition.keys.all? { |k| metadata[k] == condition[k] }
       when Array
-        condition.map { |key| metadata[key] }.none?(&:nil?)
+        condition.map { |key| metadata[key] }.all?
       else
         metadata[condition]
       end
