@@ -79,6 +79,10 @@ module Lopata
       steps.reject { |s| s.teardown_group?(self) } + steps.select { |s| s.teardown_group?(self) }
     end
 
+    def let_methods
+      @let_methods ||= {}
+    end
+
     private
 
     # Group step's block is a block in context of builder, not scenario. So hide the @block to not be used in scenario.
@@ -176,7 +180,12 @@ module Lopata
 
     # Step metadata is a combination of metadata given for step and all contexts (groups) the step included
     def metadata
-      ([step] + groups).compact.inject({}) { |merged, part| merged.merge(part.metadata) }
+      (groups + [step]).compact.inject({}) { |merged, part| merged.merge(part.metadata) }
+    end
+
+    # Step methods is a combination of let_methods for all contexts (group) the step included
+    def let_methods
+      (groups).compact.inject({}) { |merged, part| merged.merge(part.let_methods) }
     end
   end
 end

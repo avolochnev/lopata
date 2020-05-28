@@ -21,7 +21,9 @@ class Lopata::Scenario
   private
 
   def method_missing(method, *args, &block)
-    if metadata.keys.include?(method)
+    if execution.let_methods.include?(method)
+      instance_exec(*args, &execution.let_methods[method])
+    elsif metadata.keys.include?(method)
       metadata[method]
     else
       super
@@ -29,7 +31,7 @@ class Lopata::Scenario
   end
 
   def respond_to_missing?(method, *)
-    metadata.keys.include?(method) or super
+    execution.let_methods.include?(method) or metadata.keys.include?(method) or super
   end
 
   class Execution
@@ -38,6 +40,7 @@ class Lopata::Scenario
     def initialize(title, options_title, metadata = {})
       @title = [title, options_title].compact.reject(&:empty?).join(' ')
       @metadata = metadata
+      @let_methods = {}
       @status = :not_runned
       @steps = []
       @scenario = Lopata::Scenario.new(self)
@@ -83,6 +86,25 @@ class Lopata::Scenario
       else
         @metadata
       end
+    end
+
+    def let_methods
+      if current_step
+        @let_methods.merge(current_step.let_methods)
+      else
+        @let_methods
+      end
+    end
+
+    def let(method_name, &block)
+      # define_singleton_method method_name, &block
+      base =
+        if current_step && !current_step.groups.empty?
+          current_step.groups.last.let_methods
+        else
+          @let_methods
+        end
+      base[method_name] = block
     end
 
     def cleanup

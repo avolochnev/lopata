@@ -103,8 +103,8 @@ class Lopata::ScenarioBuilder
   end
 
   def let(method_name, &block)
-    steps << Lopata::Step.new(nil) do
-      define_singleton_method method_name, &block
+    steps << Lopata::Step.new(:let) do
+      execution.let(method_name, &block)
     end
   end
 
