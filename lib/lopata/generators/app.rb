@@ -11,7 +11,6 @@ module Lopata
       def create_root_files
         template 'Lopatafile', "#{name}/Lopatafile"
         template 'Gemfile', "#{name}/Gemfile"
-        template '.rspec', "#{name}/.rspec"
         template 'config/environments/qa.yml', "#{name}/config/environments/qa.yml"
         template 'config/initializers/capybara.rb', "#{name}/config/initializers/capybara.rb"
         template 'spec/spec_helper.rb', "#{name}/spec/spec_helper.rb"
