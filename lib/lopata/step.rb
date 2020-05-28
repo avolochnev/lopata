@@ -116,7 +116,6 @@ module Lopata
 
     def run(scenario)
       @status = :running
-      world.notify_observers(:step_started, self)
       begin
         run_step(scenario)
         if pending?
@@ -129,7 +128,6 @@ module Lopata
         @status = :failed unless pending?
         @exception = e
       end
-      world.notify_observers(:step_finished, self)
     end
 
     def run_step(scenario)

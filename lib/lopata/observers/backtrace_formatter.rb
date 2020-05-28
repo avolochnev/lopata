@@ -1,7 +1,11 @@
 module Lopata
   module Observers
+    # @private
     # Based on RSpec::Core::BacktraceFormatter
+    #
+    # Provides ability to format backtrace and find source code by file and line number.
     class BacktraceFormatter
+      # @private
       attr_accessor :exclusion_patterns, :inclusion_patterns
 
       def initialize
@@ -14,6 +18,10 @@ module Lopata
         inclusion_patterns << Regexp.new(Dir.getwd)
       end
 
+      # Filter backtrace.
+      #
+      # @param backtrace [Array<String>] exception backtrace
+      # @return [Array<String>] backtrace lines except ruby libraries, gems and executable files.
       def format(backtrace)
         return [] unless backtrace
         return backtrace if backtrace.empty?
@@ -28,6 +36,12 @@ module Lopata
           end
       end
 
+
+      # Extracts error message from excetion
+      #
+      # @param exeption [Exception]
+      # @param include_backtrace [Boolean] whether to add formatted backtrace to output
+      # @return [String] error message from excetion, incuding source code line.
       def error_message(exception, include_backtrace: false)
         backtrace = format(exception.backtrace)
         source_line = extract_source_line(backtrace.first)

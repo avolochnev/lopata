@@ -4,6 +4,7 @@ require_relative 'backtrace_formatter'
 
 module Lopata
   module Observers
+    # @private
     class WebLogger < BaseObserver
       def started(world)
         raise "Build number is not initailzed in Lopata::Config" unless Lopata::Config.build_number
@@ -29,6 +30,7 @@ module Lopata
   PENDING = 2
   SKIPPED = 5
 
+  # @private
   class Client
     include HTTParty
     base_uri Lopata::Config.lopata_host
