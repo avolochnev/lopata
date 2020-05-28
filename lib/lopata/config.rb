@@ -30,30 +30,10 @@ module Lopata
       ActiveRecord::Base.establish_connection(@config['db']) if @config['db']
     end
 
-    def init_rspec
-      require 'lopata/rspec/dsl'
-      require 'lopata/rspec/role'
-      ::RSpec.configure do |c|
-        c.include Lopata::RSpec::DSL
-        c.include Lopata::RSpec::Role
-      end
-      init_rspec_filters
-    end
-
     def init_lopata_logging(build)
       self.build_number = build
       require 'lopata/observers/web_logger'
       add_observer Lopata::Observers::WebLogger.new
-    end
-
-    def init_rspec_filters
-      filters = {}
-      filters[:focus] = true if ops[:focus]
-      unless filters.blank?
-        ::RSpec.configure do |c|
-          c.inclusion_filter = filters
-        end
-      end
     end
 
     def before_start(&block)
