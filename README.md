@@ -1,6 +1,6 @@
-# Lopata - functional acceptance testing
+# Lopata
 
-Motivation: use RSpec for functional testing.
+Functional acceptance testing using Ruby.
 
 ## Installation
 
@@ -20,3 +20,7 @@ Run tests:
 
     cd <project-name>
     lopata
+
+## Documentation
+
+See [features description](https://github.com/avolochnev/lopata/tree/master/features) for documentation.
