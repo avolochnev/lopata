@@ -1,5 +1,5 @@
 class Lopata::ScenarioBuilder
-  attr_reader :title, :common_metadata
+  attr_reader :title, :common_metadata, :options, :diagonals
   attr_accessor :shared_step, :group
 
   def self.define(title, metadata = {}, &block)
@@ -10,6 +10,8 @@ class Lopata::ScenarioBuilder
 
   def initialize(title, metadata = {})
     @title, @common_metadata = title, metadata
+    @diagonals = []
+    @options = []
   end
 
   def build
@@ -31,24 +33,10 @@ class Lopata::ScenarioBuilder
     end
   end
 
-  def as(*args, &block)
-    @roles = args.flatten
-    @roles << CalculatedValue.new(&block) if block_given?
-    @role_options = nil
-  end
-
-  def role_options
-    @role_options ||= build_role_options
-  end
-
   def metadata(hash)
     raise 'metadata expected to be a Hash' unless hash.is_a?(Hash)
     @common_metadata ||= {}
     @common_metadata.merge! hash
-  end
-
-  def without_user
-    @without_user = true
   end
 
   def skip_when(&block)
@@ -108,42 +96,23 @@ class Lopata::ScenarioBuilder
     end
   end
 
-  def build_role_options
-    return [] unless roles
-    [Diagonal.new(:as, roles.map { |r| [Lopata::Config.role_descriptions[r], r] })]
-  end
-
-  def roles
-    return false if @without_user
-    @roles ||= [Lopata::Config.default_role].compact
-  end
-
   def option(metadata_key, variants)
-    options << Option.new(metadata_key, variants)
+    @options << Option.new(metadata_key, variants)
   end
 
   def diagonal(metadata_key, variants)
-    diagonals << Diagonal.new(metadata_key, variants)
-  end
-
-  def options
-    @options ||= []
-  end
-
-  def diagonals
-    @diagonals ||= []
+    @diagonals << Diagonal.new(metadata_key, variants)
   end
 
   def option_combinations
-    combinations = combine([OptionSet.new], options + diagonals + role_options)
-    while !(diagonals + role_options).all?(&:complete?)
-      combinations << OptionSet.new(*(options + diagonals + role_options).map(&:next_variant))
+    combinations = combine([OptionSet.new], options + diagonals)
+    while !diagonals.all?(&:complete?)
+      combinations << OptionSet.new(*(options + diagonals).map(&:next_variant))
     end
     combinations.reject { |option_set| skip?(option_set) }
   end
 
   def combine(source_combinations, rest_options)
-    # raise 'source_combinations cannot be empty' if source_combinations.blank?
     return source_combinations if rest_options.empty?
     combinations = []
     current_option = rest_options.shift
