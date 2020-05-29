@@ -1,4 +1,5 @@
 module Lopata
+  # @private
   class Condition
     attr_reader :condition, :positive
     def initialize(condition, positive: true)

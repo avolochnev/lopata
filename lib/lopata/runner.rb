@@ -12,9 +12,7 @@ module Lopata
     desc 'test', 'Run tests'
     option :env, default: :qa, aliases: 'e'
     option :"no-log", type: :boolean, aliases: 'n'
-    option :focus, type: :boolean, aliases: 'f'
     option :rerun, type: :boolean, aliases: 'r'
-    option :users, type: :array, aliases: 'u'
     option :build, aliases: 'b'
     option :keep, type: :boolean, aliases: 'k'
     option :text, aliases: 't'
@@ -39,8 +37,6 @@ module Lopata
     no_commands do
       def configure_from_options
         Lopata::Config.ops = {
-          focus: options[:focus],
-          users: options[:users],
           build: options[:build],
           env:   options[:env],
           keep:  options[:keep],

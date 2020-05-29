@@ -17,11 +17,6 @@ module Lopata
         @finished += 1
         @client.add_attempt(scenario, @finished)
       end
-
-      # def example_pending(notification)
-      #   example = notification.example
-      #   @client.add_attempt(example, Lopata::PENDING, example.execution_result.pending_message)
-      # end
     end
   end
 

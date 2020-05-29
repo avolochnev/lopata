@@ -2,15 +2,19 @@ require_relative 'backtrace_formatter'
 
 module Lopata
   module Observers
+    # @private
     class ConsoleOutputObserver < BaseObserver
       extend Forwardable
+      # @private
       attr_reader :output
+      # @private
       def_delegators :output, :puts, :flush
 
       def initialize
         @output = $stdout
       end
 
+      # @see Lopata::Observers::BaseObserver#finished
       def finished(world)
         total = statuses.values.inject(0, &:+)
         counts = statuses.map do |status, count|
@@ -20,6 +24,7 @@ module Lopata
         puts "#{total} scenario%s %s" % [total == 1 ? '' : 's', details]
       end
 
+      # @see Lopata::Observers::BaseObserver#scenario_finished
       def scenario_finished(scenario)
         message = "#{scenario.title} #{bold(scenario.status.to_s.upcase)}"
         puts colored(message, scenario.status)
