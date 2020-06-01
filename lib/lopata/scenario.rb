@@ -65,7 +65,7 @@ class Lopata::Scenario
     end
 
     def world
-      @world ||= Lopata::Config.world
+      Lopata.world
     end
 
     def failed?

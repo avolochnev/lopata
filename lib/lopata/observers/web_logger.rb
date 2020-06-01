@@ -7,8 +7,7 @@ module Lopata
     # @private
     class WebLogger < BaseObserver
       def started(world)
-        raise "Build number is not initailzed in Lopata::Config" unless Lopata::Config.build_number
-        @client = Lopata::Client.new(Lopata::Config.build_number)
+        @client = Lopata::Client.new
         @client.start(world.scenarios.count)
         @finished = 0
       end
@@ -28,12 +27,15 @@ module Lopata
   # @private
   class Client
     include HTTParty
-    base_uri Lopata::Config.lopata_host
 
-    attr_accessor :build_number
+    attr_reader :url, :project_code, :build_number
 
-    def initialize(build_number)
-      @build_number = build_number
+    def initialize
+      params = Lopata.configuration.web_logging_params
+      raise "Web logging is not initailzed" unless params
+      @url = HTTParty.normalize_base_uri(params[:url])
+      @project_code = params[:project_code]
+      @build_number = params[:build_number]
     end
 
     def start(count)
@@ -80,20 +82,25 @@ module Lopata
 
     private
 
-    def get_json(url)
-      JSON.parse(self.class.get(url).body)
+    def get_json(path)
+      JSON.parse(self.class.get(path, base_uri: url).body)
     end
 
     def post(*args)
-      self.class.post(*args)
+      self.class.post(*with_base_uri(args))
     end
 
     def patch(*args)
-      self.class.patch(*args)
+      self.class.patch(*with_base_uri(args))
     end
 
-    def project_code
-      Lopata::Config.lopata_code
+    def with_base_uri(args = [])
+      if args.last.is_a? Hash
+        args.last[:base_uri] = url
+      else
+        args << { base_uri: url }
+      end
+      args
     end
 
     def error_message_for(step)

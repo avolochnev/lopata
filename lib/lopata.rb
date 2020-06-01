@@ -1,5 +1,6 @@
 require 'lopata/id'
-require 'lopata/config'
+require 'lopata/configuration'
+require 'lopata/environment'
 require 'lopata/scenario_builder'
 require 'lopata/scenario'
 require 'lopata/step'
@@ -7,7 +8,7 @@ require 'lopata/shared_step'
 
 module Lopata
   # Define the scenario.
-  # @see Lopata::ScenarioBuilder#define
+  # @see Lopata::ScenarioBuilder.define
   def self.define(*args, &block)
     Lopata::ScenarioBuilder.define(*args, &block)
   end
@@ -39,14 +40,34 @@ module Lopata
   end
 
   # Yields the global configuration to a block.
-  # @yield [Lopata::Config] global configuration
+  # @yield [Lopata::Configuration] global configuration
   #
   # @example
   #     Lopata.configure do |config|
-  #       config.add_formatter 'documentation'
+  #       config.before_scenario 'setup test user'
   #     end
-  # @see Core::Configuration
+  # @see Lopata::Configuration
   def self.configure(&block)
-    yield Lopata::Config
+    yield Lopata.configuration
+  end
+
+  # Returns global configuration object.
+  # @return [Lopata::Configuration]
+  # @see Lopata.configure
+  def self.configuration
+    @configuration ||= Lopata::Configuration.new
+  end
+
+  # @private
+  # Internal container for global non-configuration data.
+  def self.world
+    @world ||= Lopata::World.new
+  end
+
+  # Return global environment object
+  # @return [Lopata::Environment]
+  # @see Lopata::Environment
+  def self.environment
+    Lopata.configuration.environment
   end
 end

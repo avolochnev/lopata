@@ -38,11 +38,14 @@ module Lopata
       #
       # Does nothing if 'keep' mode is enabled:
       #
-      #     Lopata::Config.ops[:keep] = true # false by default
+      #     Lopata.configure do |c|
+      #       c.keep = true
+      #     end
       #
       # @param objects [Array<ActiveRecord::Base, Array<ActiveRecord::Base>, nil>] to be destroyed
+      # @see Lopata::Configuration#keep
       def cleanup(*objects)
-        return if Lopata::Config.ops[:keep]
+        return if Lopata.configuration.keep
         objects.flatten.compact.each do |o|
           begin
             o.reload.destroy!
@@ -88,6 +91,9 @@ module Lopata
     end
   end
 end
+
+params = Lopata.environment['db']
+ActiveRecord::Base.establish_connection(params) if params
 
 Lopata::Scenario.include Lopata::ActiveRecord::Methods
 Lopata::ScenarioBuilder.include Lopata::ActiveRecord::DSL

@@ -33,4 +33,4 @@ Lopata.configure do |c|
   c.after_scenario { cleanup @created_objects }
 end
 
-::FactoryBot.find_definitions unless Lopata::Config.readonly
+::FactoryBot.find_definitions

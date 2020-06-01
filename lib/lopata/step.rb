@@ -135,10 +135,6 @@ module Lopata
       scenario.instance_exec(&block)
     end
 
-    def world
-      @world ||= Lopata::Config.world
-    end
-
     def failed?
       status == :failed
     end

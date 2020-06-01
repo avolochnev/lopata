@@ -15,7 +15,7 @@ class Lopata::ScenarioBuilder
   end
 
   def build
-    filters = Lopata::Config.filters
+    filters = Lopata.configuration.filters
     option_combinations.each do |option_set|
       metadata = common_metadata.merge(option_set.metadata)
       scenario = Lopata::Scenario::Execution.new(title, option_set.title, metadata)
@@ -77,14 +77,14 @@ class Lopata::ScenarioBuilder
 
   def steps_with_hooks
     s = []
-    unless Lopata::Config.before_scenario_steps.empty?
-      s << Lopata::ActionStep.new(:setup, *Lopata::Config.before_scenario_steps)
+    unless Lopata.configuration.before_scenario_steps.empty?
+      s << Lopata::ActionStep.new(:setup, *Lopata.configuration.before_scenario_steps)
     end
 
     s += steps
 
-    unless Lopata::Config.after_scenario_steps.empty?
-      s << Lopata::ActionStep.new(:teardown, *Lopata::Config.after_scenario_steps)
+    unless Lopata.configuration.after_scenario_steps.empty?
+      s << Lopata::ActionStep.new(:teardown, *Lopata.configuration.after_scenario_steps)
     end
 
     s
@@ -125,7 +125,7 @@ class Lopata::ScenarioBuilder
   end
 
   def world
-    @world ||= Lopata::Config.world
+    Lopata.world
   end
 
   # Набор вариантов, собранный для одного теста

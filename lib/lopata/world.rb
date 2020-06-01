@@ -22,8 +22,10 @@ class Lopata::World
     end
   end
 
+  private
+
   # Define observers based on configuration
   def observers
-    @observers ||= [Lopata::Observers::ConsoleOutputObserver.new]
+    Lopata.configuration.observers
   end
 end

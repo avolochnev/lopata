@@ -1,6 +1,5 @@
 require 'thor'
 require_relative 'generators/app'
-require_relative 'config'
 require_relative 'world'
 require_relative 'loader'
 require_relative '../lopata'
@@ -11,16 +10,14 @@ module Lopata
   class Runner < Thor
     desc 'test', 'Run tests'
     option :env, default: :qa, aliases: 'e'
-    option :"no-log", type: :boolean, aliases: 'n'
     option :rerun, type: :boolean, aliases: 'r'
-    option :build, aliases: 'b'
     option :keep, type: :boolean, aliases: 'k'
     option :text, aliases: 't'
     def test(*args)
       configure_from_options
       Lopata::Loader.load_shared_steps
       Lopata::Loader.load_scenarios(*args)
-      world = Lopata::Config.world
+      world = Lopata.world
       world.start
       world.scenarios.each { |s| s.run }
       world.finish
@@ -36,24 +33,23 @@ module Lopata
 
     no_commands do
       def configure_from_options
-        Lopata::Config.ops = {
-          build: options[:build],
-          env:   options[:env],
-          keep:  options[:keep],
-        }
-        Lopata::Config.init(options[:env])
-        Lopata::Config.initialize_test
+        Lopata.configure do |c|
+          c.env = options[:env].to_sym
+          c.keep = options[:keep]
+          c.load_environment
+          c.run_before_start_hooks
+        end
         add_text_filter(options[:text]) if options[:text]
         add_rerun_filter if options[:rerun]
       end
 
       def add_text_filter(text)
-        Lopata::Config.filters << -> (scenario) { scenario.title.include?(text) }
+        Lopata.configuration.filters << -> (scenario) { scenario.title.include?(text) }
       end
 
       def add_rerun_filter
-        to_rerun = Lopata::Client.new(Lopata::Config.build_number).to_rerun
-        Lopata::Config.filters << -> (scenario) { to_rerun.include?(scenario.title) }
+        to_rerun = Lopata::Client.new.to_rerun
+        Lopata.configuration.filters << -> (scenario) { to_rerun.include?(scenario.title) }
       end
     end
   end

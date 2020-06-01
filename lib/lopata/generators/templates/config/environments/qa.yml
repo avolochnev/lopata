@@ -1,5 +1,4 @@
 url: http://yourapp.com
-name: QA
 # db:
 #   adapter: postgresql
 #   host: localhost

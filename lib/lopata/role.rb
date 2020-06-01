@@ -1,4 +1,6 @@
 module Lopata
+  # @see Lopata::Configuration#role_descriptions
+  # @see Lopata::Configuration#default_role
   module Role
     # To be included in Lopata::Scenario
     module Methods
@@ -25,12 +27,12 @@ module Lopata
 
       def build_role_options
         return [] unless roles
-        [Lopata::ScenarioBuilder::Diagonal.new(:as, roles.map { |r| [Lopata::Config.role_descriptions[r], r] })]
+        [Lopata::ScenarioBuilder::Diagonal.new(:as, roles.map { |r| [Lopata.configuration.role_descriptions[r], r] })]
       end
 
       def roles
         return false if @without_user
-        @roles ||= [Lopata::Config.default_role].compact
+        @roles ||= [Lopata.configuration.default_role].compact
       end
 
       def diagonals
