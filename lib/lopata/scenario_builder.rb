@@ -18,7 +18,7 @@ class Lopata::ScenarioBuilder
   #
   # @param title [String] scenario unique title
   # @param metadata [Hash] metadata to be used within the scenario
-  # @param &block [Proc] the scenario definition
+  # @param block [Block] the scenario definition
   # @see Lopata.define
   def self.define(title, metadata = {}, &block)
     builder = new(title, metadata)
@@ -53,6 +53,59 @@ class Lopata::ScenarioBuilder
     end
   end
 
+  # @!group Defining variants
+
+  # Define option for the scenario.
+  #
+  # The scenario will be generated for all the options.
+  # If more then one option given, the scenarios for all options combinations will be generated.
+  #
+  # @param metadata_key [Symbol] the key to access option data via metadata.
+  # @param variants [Hash{String => Object}] variants for the option
+  #   Keys are titles of the variant, values are metadata values.
+  #
+  # @example
+  #   Lopata.define 'scenario' do
+  #     option :one, 'one' => 1, 'two' => 2
+  #     option :two, 'two' => 2, 'three' => 3
+  #     # will generate 4 scenarios:
+  #     # - 'scenario one two'
+  #     # - 'scenario one three'
+  #     # - 'scenario two two'
+  #     # - 'scenario two three'
+  #   end
+  #
+  # @see #diagonal
+  def option(metadata_key, variants)
+    @options << Option.new(metadata_key, variants)
+  end
+
+  # Define diagonal for the scenario.
+  #
+  # The scenario will be generated for all the variants of the diagonal.
+  # Each variant of diagonal will be selected for at least one scenario.
+  # It may be included in more then one scenario when other diagonal or option has more variants.
+  #
+  # @param metadata_key [Symbol] the key to access diagonal data via metadata.
+  # @param variants [Hash{String => Object}] variants for the diagonal.
+  #   Keys are titles of the variant, values are metadata values.
+  #
+  # @example
+  #   Lopata.define 'scenario' do
+  #     option :one, 'one' => 1, 'two' => 2
+  #     diagonal :two, 'two' => 2, 'three' => 3
+  #     diagonal :three, 'three' => 3, 'four' => 4, 'five' => 5
+  #     # will generate 3 scenarios:
+  #     # - 'scenario one two three'
+  #     # - 'scenario two three four'
+  #     # - 'scenario one two five'
+  #   end
+  #
+  # @see #option
+  def diagonal(metadata_key, variants)
+    @diagonals << Diagonal.new(metadata_key, variants)
+  end
+
   # Define additional metadata for the scenario
   #
   # @example
@@ -84,21 +137,19 @@ class Lopata::ScenarioBuilder
     @skip_when = block
   end
 
-  # private
+  # @private
   def skip?(option_set)
     @skip_when && @skip_when.call(option_set)
   end
+
+  # @!endgroup
 
   # @!group Defining Steps
 
   # @private
   # @macro [attach] define_step_method
-  #   @!scope class
+  #   @!scope instance
   #   @method $1
-  #   @overload $1(*args, **metadata, &block)
-  #     @param args [Array<String, Symbol, Proc>] the step parameters.
-  #     @param metadata [Hash] the step additional metadata
-  #     @param block [Block] The implementation of the step.
   def self.define_step_method(name)
     name_if = "%s_if" % name
     name_unless = "%s_unless" % name
@@ -125,6 +176,12 @@ class Lopata::ScenarioBuilder
   #   end
   #
   # Setup step used for set test data.
+  # @overload setup(*steps, &block)
+  #   @param steps [Array<String, Symbol, Proc>] the steps to be runned as a part of setup.
+  #     String - name of shared step to be called.
+  #     Symbol - metadata key, referenced to shared step name.
+  #     Proc - in-place step implementation.
+  #   @param block [Block] The implementation of the step.
   define_step_method :setup
 
   # Define action step.
@@ -141,6 +198,13 @@ class Lopata::ScenarioBuilder
   #   end
   #
   # Action step is used for emulate user or external system action
+  #
+  # @overload action(*steps, &block)
+  #   @param steps [Array<String, Symbol, Proc>] the steps to be runned as a part of action.
+  #     String - name of shared step to be called.
+  #     Symbol - metadata key, referenced to shared step name.
+  #     Proc - in-place step implementation.
+  #   @param block [Block] The implementation of the step.
   define_step_method :action
 
   # Define teardown step.
@@ -149,12 +213,26 @@ class Lopata::ScenarioBuilder
   #   teardown { @user.destroy }
   # Teardown step will be called at the end of scenario running.
   # But it suggested to be decared right after setup or action step which require teardown.
+  #
+  # @overload teardown(*steps, &block)
+  #   @param steps [Array<String, Symbol, Proc>] the steps to be runned as a part of teardown.
+  #     String - name of shared step to be called.
+  #     Symbol - metadata key, referenced to shared step name.
+  #     Proc - in-place step implementation.
+  #   @param block [Block] The implementation of the step.
   define_step_method :teardown
 
   # Define verify steps.
   # @example
   #   verify 'home page displayed' # call shared step.
   # Usually for validation shared steps inclusion
+  #
+  # @overload verify(*steps, &block)
+  #   @param steps [Array<String, Symbol, Proc>] the steps to be runned as a part of verification.
+  #     String - name of shared step to be called.
+  #     Symbol - metadata key, referenced to shared step name.
+  #     Proc - in-place step implementation.
+  #   @param block [Block] The implementation of the step.
   define_step_method :verify
 
   # Define group of steps.
@@ -178,12 +256,15 @@ class Lopata::ScenarioBuilder
   #   it 'works' do
   #     expect(1).to eq 1
   #   end
-  # @overload context(title, **metadata, &block)
+  # @overload it(title, &block)
   #   @param title [String] validation title
   #   @param block [Block] The implementation of the step.
   define_step_method :it
 
   # Define runtime method for the scenario.
+  #
+  # @note
+  #   The method to be called via #method_missing, so it wont override already defined methods.
   #
   # @example
   #   let(:square) { |num| num * num }
@@ -232,14 +313,6 @@ class Lopata::ScenarioBuilder
     s
   end
 
-  def option(metadata_key, variants)
-    @options << Option.new(metadata_key, variants)
-  end
-
-  def diagonal(metadata_key, variants)
-    @diagonals << Diagonal.new(metadata_key, variants)
-  end
-
   # @private
   def option_combinations
     combinations = combine([OptionSet.new], options + diagonals)
@@ -267,37 +340,45 @@ class Lopata::ScenarioBuilder
     Lopata.world
   end
 
-  # @private
   # Set of options for scenario
   class OptionSet
+    # @private
     attr_reader :variants
+
+    # @private
     def initialize(*variants)
       @variants = {}
       variants.compact.each { |v| self << v }
     end
 
+    # @private
     def +(other_set)
       self.class.new(*@variants.values).tap do |sum|
         other_set.each { |v| sum << v }
       end
     end
 
+    # @private
     def <<(variant)
       @variants[variant.key] = variant
     end
 
+    # @private
     def [](key)
       @variants[key]
     end
 
+    # @private
     def each(&block)
       @variants.values.each(&block)
     end
 
+    # @private
     def title
       @variants.values.map(&:title).compact.join(' ')
     end
 
+    # @return [Hash{Symbol => Object}] metadata for this option set
     def metadata
       @variants.values.inject({}) do |metadata, variant|
         metadata.merge(variant.metadata(self))

@@ -1,5 +1,7 @@
 module Lopata
+  # @private
   module Generators
+    # @private
     class App < Thor::Group
       include Thor::Actions
       argument :name

@@ -7,6 +7,7 @@ require_relative 'observers'
 require_relative 'condition'
 
 module Lopata
+  # @private
   class Runner < Thor
     desc 'test', 'Run tests'
     option :env, default: :qa, aliases: 'e'
@@ -19,9 +20,9 @@ module Lopata
       Lopata::Loader.load_shared_steps
       Lopata::Loader.load_scenarios(*args)
       world = Lopata.world
-      world.start
+      world.notify_observers(:started, world)
       world.scenarios.each { |s| s.run }
-      world.finish
+      world.notify_observers(:finished, world)
     end
 
     default_task :test

@@ -6,6 +6,7 @@ require 'lopata/scenario'
 require 'lopata/step'
 require 'lopata/shared_step'
 
+# Namespace for all Lopata code.
 module Lopata
   # Define the scenario.
   # @see Lopata::ScenarioBuilder.define
@@ -34,7 +35,7 @@ module Lopata
   #       end
   #     end
   # @param name [String] shared step unique name
-  # @param block shared step action sequence definition
+  # @param block [Block] shared step action sequence definition
   def self.shared_step(name, &block)
     Lopata::SharedStep.register(name, &block)
   end

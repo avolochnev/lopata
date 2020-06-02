@@ -41,7 +41,7 @@ module Lopata
       # The scenario should be set to use the role via before_scenario step using #current_role param.
       #
       # @param args [Array<Symbol>] list of roles the scenario to be runned with.
-      # @param &block [Proc] the block to calculate role from scenario metadata.
+      # @param block [Block] the block to calculate role from scenario metadata.
       def as(*args, &block)
         @roles = args.flatten
         @roles << Lopata::ScenarioBuilder::CalculatedValue.new(&block) if block_given?

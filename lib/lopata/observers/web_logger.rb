@@ -19,9 +19,13 @@ module Lopata
     end
   end
 
+  # @private
   PASSED = 0
+  # @private
   FAILED = 1
+  # @private
   PENDING = 2
+  # @private
   SKIPPED = 5
 
   # @private

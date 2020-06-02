@@ -39,7 +39,7 @@ module Lopata
 
       # Extracts error message from excetion
       #
-      # @param exeption [Exception]
+      # @param exception [Exception]
       # @param include_backtrace [Boolean] whether to add formatted backtrace to output
       # @return [String] error message from excetion, incuding source code line.
       def error_message(exception, include_backtrace: false)

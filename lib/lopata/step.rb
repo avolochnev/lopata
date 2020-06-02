@@ -1,4 +1,5 @@
 module Lopata
+  # @private
   class Step
     attr_reader :block, :args, :condition, :method_name, :shared_step
     # metadata overrien by the step.
@@ -26,7 +27,8 @@ module Lopata
     end
   end
 
-  # Used for action, setup, teardown
+  # @private
+  # Used for action, setup, teardown, verify
   class ActionStep < Step
     def execution_steps(scenario, groups: [])
       steps = []
@@ -66,6 +68,7 @@ module Lopata
     end
   end
 
+  # @private
   # Used for context
   class GroupStep < Step
 
@@ -94,6 +97,7 @@ module Lopata
     end
   end
 
+  #@private
   class StepExecution
     attr_reader :step, :status, :exception, :block, :pending_message, :groups
     extend Forwardable

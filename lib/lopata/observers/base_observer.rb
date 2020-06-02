@@ -21,12 +21,12 @@ module Lopata
       end
 
       # Called before single scenario execution.
-      # @param world [Lopata::Scenario::Execution]
+      # @param scenario [Lopata::Scenario::Execution]
       def scenario_started(scenario)
       end
 
       # Called after single scenario execution.
-      # @param world [Lopata::Scenario::Execution]
+      # @param scenario [Lopata::Scenario::Execution]
       def scenario_finished(scenario)
       end
     end

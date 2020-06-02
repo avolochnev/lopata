@@ -51,6 +51,10 @@ module Lopata
   module FactoryBot
     # To be included in Lopata::Scenario
     module Methods
+      # Wrapper for FactoryBot#create
+      # Calls the FactoryBot#create with given paramters and returns it result.
+      # Additionally store the created object for destroying at the end of scenario.
+      # @see Lopata::ActiveRecord::Methods#cleanup
       def create(*params)
         cleanup_later ::FactoryBot.create(*params)
       end

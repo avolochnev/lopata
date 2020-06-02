@@ -1,21 +1,15 @@
+# Container for gobal non-configuration data
 class Lopata::World
+  # Scenarios are selected for current run
+  # @return [Array<Lopata::Scenario::Execution>]
   attr_reader :scenarios
 
+  # @private
   def initialize
     @scenarios = []
   end
 
-  def start
-    notify_observers(:started, self)
-  end
-
-  # Called at the end of test running.
-  #
-  # Notifies observers about testing finish
-  def finish
-    notify_observers(:finished, self)
-  end
-
+  # @private
   def notify_observers(event, context)
     observers.each do |observer|
       observer.send event, context

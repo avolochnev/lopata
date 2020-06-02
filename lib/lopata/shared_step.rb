@@ -1,8 +1,10 @@
 module Lopata
+  # @private
   class SharedStep
     attr_reader :name, :block
 
     class NotFound < StandardError; end
+
 
     def self.register(name, &block)
       raise ArgumentError, "Comma is not allowed in shared step name: '%s'" % name if name =~ /,/
