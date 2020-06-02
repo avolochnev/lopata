@@ -1,19 +1,39 @@
+# Context for scenario creation.
 class Lopata::ScenarioBuilder
+  # @private
   attr_reader :title, :common_metadata, :options, :diagonals
+  # @private
   attr_accessor :shared_step, :group
 
+  # Defines one or more scenarios.
+  #
+  # @example
+  #     Lopata.define 'scenario' do
+  #       setup 'test user'
+  #       action 'login'
+  #       verify 'home page displayed'
+  #     end
+  #
+  # Given block will be calculated in context of the ScenarioBuilder
+  #
+  # @param title [String] scenario unique title
+  # @param metadata [Hash] metadata to be used within the scenario
+  # @param &block [Proc] the scenario definition
+  # @see Lopata.define
   def self.define(title, metadata = {}, &block)
     builder = new(title, metadata)
     builder.instance_exec &block
     builder.build
   end
 
+  # @private
   def initialize(title, metadata = {})
     @title, @common_metadata = title, metadata
     @diagonals = []
     @options = []
   end
 
+  # @private
   def build
     filters = Lopata.configuration.filters
     option_combinations.each do |option_set|
@@ -33,21 +53,53 @@ class Lopata::ScenarioBuilder
     end
   end
 
+  # Define additional metadata for the scenario
+  #
+  # @example
+  #     Lopata.define 'scenario' do
+  #       metadata key: 'value'
+  #       it 'metadata available' do
+  #         expect(metadata[:key]).to eq 'value'
+  #       end
+  #     end
   def metadata(hash)
     raise 'metadata expected to be a Hash' unless hash.is_a?(Hash)
     @common_metadata ||= {}
     @common_metadata.merge! hash
   end
 
+  # Skip scenario for given variants combination
+  #
+  # @example
+  #     Lopata.define 'multiple options' do
+  #       option :one, 'one' => 1, 'two' => 2
+  #       option :two, 'two' => 2, 'three' => 3
+  #       skip_when { |opt| opt.metadata[:one] == opt.metadata[:two] }
+  #       it 'not equal' do
+  #         expect(one).to_not eq two
+  #       end
+  #     end
+  #
   def skip_when(&block)
     @skip_when = block
   end
 
+  # private
   def skip?(option_set)
     @skip_when && @skip_when.call(option_set)
   end
 
-  %i{ setup action it teardown verify context }.each do |name|
+  # @!group Defining Steps
+
+  # @private
+  # @macro [attach] define_step_method
+  #   @!scope class
+  #   @method $1
+  #   @overload $1(*args, **metadata, &block)
+  #     @param args [Array<String, Symbol, Proc>] the step parameters.
+  #     @param metadata [Hash] the step additional metadata
+  #     @param block [Block] The implementation of the step.
+  def self.define_step_method(name)
     name_if = "%s_if" % name
     name_unless = "%s_unless" % name
     define_method name, ->(*args, **metadata, &block) { add_step(name, *args, metadata: metadata, &block) }
@@ -59,6 +111,94 @@ class Lopata::ScenarioBuilder
     }
   end
 
+  # Define setup step.
+  # @example
+  #   setup do
+  #   end
+  #
+  #   # setup from named shared step
+  #   setup 'create user'
+  #
+  #   # setup with both shared step and code block
+  #   setup 'create user' do
+  #     @user.update(admin: true)
+  #   end
+  #
+  # Setup step used for set test data.
+  define_step_method :setup
+
+  # Define action step.
+  # @example
+  #   action do
+  #   end
+  #
+  #   # action from named shared step
+  #   action 'login'
+  #
+  #   # setup with both shared step and code block
+  #   action 'login', 'go dashboard' do
+  #     @user.update(admin: true)
+  #   end
+  #
+  # Action step is used for emulate user or external system action
+  define_step_method :action
+
+  # Define teardown step.
+  # @example
+  #   setup { @user = User.create! }
+  #   teardown { @user.destroy }
+  # Teardown step will be called at the end of scenario running.
+  # But it suggested to be decared right after setup or action step which require teardown.
+  define_step_method :teardown
+
+  # Define verify steps.
+  # @example
+  #   verify 'home page displayed' # call shared step.
+  # Usually for validation shared steps inclusion
+  define_step_method :verify
+
+  # Define group of steps.
+  # The metadata for the group may be overriden
+  # @example
+  #   context 'the task', task: :created do
+  #     verify 'task setup'
+  #     it 'created' do
+  #       expect(metadata[:task]).to eq :created
+  #     end
+  #   end
+  # Teardown steps within group will be called at the end of the group, not scenario
+  # @overload context(title, **metadata, &block)
+  #   @param title [String] context title
+  #   @param metadata [Hash] the step additional metadata
+  #   @param block [Block] The implementation of the step.
+  define_step_method :context
+
+  # Define single validation step.
+  # @example
+  #   it 'works' do
+  #     expect(1).to eq 1
+  #   end
+  # @overload context(title, **metadata, &block)
+  #   @param title [String] validation title
+  #   @param block [Block] The implementation of the step.
+  define_step_method :it
+
+  # Define runtime method for the scenario.
+  #
+  # @example
+  #   let(:square) { |num| num * num }
+  #   it 'calculated' do
+  #     expect(square(4)).to eq 16
+  #   end
+  def let(method_name, &block)
+    steps << Lopata::Step.new(:let) do
+      execution.let(method_name, &block)
+    end
+  end
+
+  # @!endgroup
+
+  # @private
   def add_step(method_name, *args, condition: nil, metadata: {}, &block)
     step_class =
       case method_name
@@ -71,10 +211,12 @@ class Lopata::ScenarioBuilder
     steps << step
   end
 
+  # @private
   def steps
     @steps ||= []
   end
 
+  # @private
   def steps_with_hooks
     s = []
     unless Lopata.configuration.before_scenario_steps.empty?
@@ -90,12 +232,6 @@ class Lopata::ScenarioBuilder
     s
   end
 
-  def let(method_name, &block)
-    steps << Lopata::Step.new(:let) do
-      execution.let(method_name, &block)
-    end
-  end
-
   def option(metadata_key, variants)
     @options << Option.new(metadata_key, variants)
   end
@@ -104,6 +240,7 @@ class Lopata::ScenarioBuilder
     @diagonals << Diagonal.new(metadata_key, variants)
   end
 
+  # @private
   def option_combinations
     combinations = combine([OptionSet.new], options + diagonals)
     while !diagonals.all?(&:complete?)
@@ -112,6 +249,7 @@ class Lopata::ScenarioBuilder
     combinations.reject { |option_set| skip?(option_set) }
   end
 
+  # @private
   def combine(source_combinations, rest_options)
     return source_combinations if rest_options.empty?
     combinations = []
@@ -124,11 +262,13 @@ class Lopata::ScenarioBuilder
     combine(combinations, rest_options)
   end
 
+  # @private
   def world
     Lopata.world
   end
 
-  # Набор вариантов, собранный для одного теста
+  # @private
+  # Set of options for scenario
   class OptionSet
     attr_reader :variants
     def initialize(*variants)
@@ -165,6 +305,7 @@ class Lopata::ScenarioBuilder
     end
   end
 
+  # @private
   class Variant
     attr_reader :key, :title, :value, :option
 
@@ -213,6 +354,7 @@ class Lopata::ScenarioBuilder
       end
   end
 
+  # @private
   class CalculatedValue
     def initialize(&block)
       @proc = block
@@ -223,6 +365,7 @@ class Lopata::ScenarioBuilder
     end
   end
 
+  # @private
   class Option
     attr_reader :variants, :key
     def initialize(key, variants)
@@ -258,6 +401,7 @@ class Lopata::ScenarioBuilder
     end
   end
 
+  # @private
   class Diagonal < Option
     def level_variants
       [next_variant]

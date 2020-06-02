@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
   s.description = "Functional acceptance testing"
 
   s.files            = `git ls-files -- lib/*`.split("\n")
-  s.files           += %w[README.md exe/lopata]
+  s.files           += %w[README.md exe/lopata .yardopts]
   s.bindir           = 'exe'
   s.executables      = ['lopata']
   s.test_files       = []

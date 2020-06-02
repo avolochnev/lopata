@@ -14,6 +14,7 @@ module Lopata
     option :keep, type: :boolean, aliases: 'k'
     option :text, aliases: 't'
     def test(*args)
+      trap_interrupt
       configure_from_options
       Lopata::Loader.load_shared_steps
       Lopata::Loader.load_scenarios(*args)
@@ -50,6 +51,10 @@ module Lopata
       def add_rerun_filter
         to_rerun = Lopata::Client.new.to_rerun
         Lopata.configuration.filters << -> (scenario) { to_rerun.include?(scenario.title) }
+      end
+
+      def trap_interrupt
+        trap('INT') { exit!(1) }
       end
     end
   end

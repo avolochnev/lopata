@@ -1,4 +1,5 @@
 module Lopata
+  # @private
   module Id
     extend self
 

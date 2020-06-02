@@ -1,25 +1,41 @@
 require 'rspec/expectations'
 
+# Scenario runtime class.
+#
+# All the scenarios are running in context of separate Lopata::Scenario object.
+#
 class Lopata::Scenario
   include RSpec::Matchers
 
+  # @private
   attr_reader :execution
 
+  # @private
   def initialize(execution)
     @execution = execution
   end
 
   # Marks current step as pending
+  # @example
+  #     it 'pending step' do
+  #       pending
+  #       expect(1).to eq 2
+  #     end
+  #
+  # Pending steps wont be failed
   def pending(message = nil)
     execution.current_step.pending!(message)
   end
 
+  # @return [Hash] metadata available for current step
+  # @note The metadata keys also availalbe as methods (via method_missing)
   def metadata
     execution.metadata
   end
 
   private
 
+  # @private
   def method_missing(method, *args, &block)
     if execution.let_methods.include?(method)
       instance_exec(*args, &execution.let_methods[method])
@@ -30,10 +46,13 @@ class Lopata::Scenario
     end
   end
 
+  # @private
   def respond_to_missing?(method, *)
     execution.let_methods.include?(method) or metadata.keys.include?(method) or super
   end
 
+  # @private
+  # Scenario execution and live-cycle information
   class Execution
     attr_reader :scenario, :status, :steps, :title, :current_step
 

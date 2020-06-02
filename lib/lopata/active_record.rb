@@ -71,6 +71,39 @@ module Lopata
       def reload(*objects)
         objects.flatten.compact.each(&:reload)
       end
+
+      # Marks object to be destroyed at the end of scenario
+      #
+      # @param object [ActiveRecord::Base] the object to be destoryed at the end of scenario
+      # @return the given object, so chains can be build
+      def cleanup_later(object)
+        return nil unless object
+        @created_objects ||= []
+        @created_objects << object
+        object
+      end
+
+      # Find ActiveRecord object of given class by params.
+      # Marks the returned object to be destroyed at the end of scenario.
+      #
+      # @example
+      #     action do
+      #       # UI actions creating the user
+      #       @user = find_created(User, username: 'testuser')
+      #     end
+      #     it 'created' do
+      #       expect(@user).to_not be_nil
+      #     end
+      #     # No cleanup needed
+      #     # cleanup :user
+      #
+      # @param cls [Class] active record model class
+      # @param params [Hash] options for record finding
+      # @return [ActiveRecord::Base, nil] the object or nil if not found
+      # @see #cleanup_later called on the hood
+      def find_created(cls, params)
+        cleanup_later cls.where(params).take
+      end
     end
 
     # To be included in Lopata::ScenarioBuilder. The methods may be used in build time.
@@ -90,6 +123,10 @@ module Lopata
       end
     end
   end
+end
+
+Lopata.configure do |c|
+  c.after_scenario { cleanup @created_objects }
 end
 
 params = Lopata.environment['db']

@@ -1,3 +1,4 @@
+# @private
 module Lopata::Loader
   extend self
 
@@ -20,6 +21,7 @@ module Lopata::Loader
     Dir["scenarios/**/*.rb"].each { |f| load File.expand_path(f) }
   end
 
+  # Loads all shared steps from predefined paths
   def load_shared_steps
     Dir["shared_steps/**/*rb"].each { |f| load File.expand_path(f) }
   end
