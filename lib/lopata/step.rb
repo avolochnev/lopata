@@ -1,3 +1,5 @@
+require 'forwardable'
+
 module Lopata
   # @private
   class Step

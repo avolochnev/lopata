@@ -1,4 +1,5 @@
 require_relative 'backtrace_formatter'
+require 'forwardable'
 
 module Lopata
   module Observers
