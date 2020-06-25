@@ -4,7 +4,7 @@ require 'lopata/runner'
 
 # use default command with arguments if given command is unknown.
 argv = ARGV.dup
-unless Lopata::Runner.all_commands.keys.include? argv
+unless Lopata::Runner.all_commands.keys.map(&:to_s).include? argv.first
   argv.unshift 'test'
 end
 
