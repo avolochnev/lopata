@@ -22,7 +22,7 @@ Gem::Specification.new do |s|
 
   s.required_ruby_version = '>= 2.3.0'
 
-  s.add_dependency "httparty", '0.11.0'
+  s.add_dependency "httparty", '0.18.1'
   s.add_dependency "thor", '~> 1.0'
   s.add_dependency "rspec-expectations", '~> 3.9'
 
