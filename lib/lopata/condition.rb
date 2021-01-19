@@ -20,6 +20,8 @@ module Lopata
         condition.keys.all? { |k| metadata[k] == condition[k] }
       when Array
         condition.map { |key| metadata[key] }.all?
+      when TrueClass, FalseClass
+        condition
       else
         metadata[condition]
       end
