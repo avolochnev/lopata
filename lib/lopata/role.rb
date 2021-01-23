@@ -45,6 +45,24 @@ module Lopata
       def as(*args, &block)
         @roles = args.flatten
         @roles << Lopata::ScenarioBuilder::CalculatedValue.new(&block) if block_given?
+        @use_all_roles = true
+        @role_options = nil
+      end
+
+      # Enumerate the roles the scenario can be run.
+      #
+      # The scenario should be set to use the role via before_scenario step using #current_role param.
+      #
+      # Only first role will be used if scenario has no options or diagonales. Some first roles will be used if
+      # options or diagonales are declared, in order of appearence.
+      #
+      # Use this to describe possible roles, but not needed to run scenario with all of them in order to save time
+      # of running.
+      #
+      # @param args [Array<Symbol>] list of roles the scenario to be runned with.
+      def as_first(*args, &block)
+        @roles = args.flatten
+        @use_all_roles = false
         @role_options = nil
       end
 
@@ -69,7 +87,8 @@ module Lopata
       # @private
       def build_role_options
         return [] unless roles
-        [Lopata::ScenarioBuilder::Diagonal.new(:as, roles.map { |r| [Lopata.configuration.role_descriptions[r], r] })]
+        role_variants = roles.map { |r| [Lopata.configuration.role_descriptions[r], r] }
+        [Lopata::ScenarioBuilder::Diagonal.new(:as, role_variants, @use_all_roles)]
       end
 
       # @private

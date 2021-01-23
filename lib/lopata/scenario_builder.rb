@@ -448,8 +448,8 @@ class Lopata::ScenarioBuilder
 
   # @private
   class Option
-    attr_reader :variants, :key
-    def initialize(key, variants)
+    attr_reader :variants, :key, :use_all_variants
+    def initialize(key, variants, use_all_variants = true)
       @key = key
       @variants =
         if variants.is_a? Hash
@@ -458,6 +458,7 @@ class Lopata::ScenarioBuilder
           # Array of arrays of two elements
           variants.map { |v| Variant.new(self, key, *v) }
         end
+      @use_all_variants = use_all_variants
     end
 
     # Variants to apply at one level
@@ -469,6 +470,7 @@ class Lopata::ScenarioBuilder
       @current ||= 0
       selected_variant = variants[@current]
       @current += 1
+      @complete = true unless use_all_variants # not need to verify all variants, just use first ones.
       if @current >= variants.length
         @current = 0
         @complete = true # all variants have been selected
