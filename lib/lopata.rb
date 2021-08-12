@@ -66,6 +66,29 @@ module Lopata
     end
   end
 
+  # Register the shared step for context.
+  # 
+  # shared_context is a shortcat for shared_step('name') { context('name') { .. } }. The block will be arrounded into the context call.
+  #
+  # @example
+  #     Lopata.shared_context 'calculation' do
+  #       it('correct') { expect(1 + 1).to eq 2 }
+  #       it('incorrect') { expect(1 + 2).to eq 4 }
+  #     end
+  #
+  # Shared context may be used in scenarios by name:
+  # @example
+  #     Lopata.define 'verify calcuation in context' do
+  #       verify 'calculation'
+  #     end
+  # @param name [String] shared step unique name, will be used as a context's name
+  # @param block [Block] shared context definition
+  def self.shared_context(name, &block)
+    Lopata::SharedStep.register(name) do
+      context(name, &block)
+    end
+  end
+
   # Yields the global configuration to a block.
   # @yield [Lopata::Configuration] global configuration
   #

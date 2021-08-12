@@ -21,6 +21,7 @@ Feature: Shared steps
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "1 scenario (1 passed)"
 
+
   Scenario: Shared steps may used other shared steps
     Given a file named "shared_steps/scenario.rb" with:
       """ruby
@@ -46,6 +47,7 @@ Feature: Shared steps
       """
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "1 scenario (1 passed)"
+
 
   Scenario: Shared steps may be included in single setup/action
     Given a file named "shared_steps/scenario.rb" with:
@@ -79,6 +81,7 @@ Feature: Shared steps
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "2 scenarios (2 passed)"
 
+
   Scenario: Comma is not allowed in shared step name
     Given a file named "shared_steps/scenario.rb" with:
       """ruby
@@ -98,6 +101,7 @@ Feature: Shared steps
       """
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "Comma is not allowed in shared step name"
+
 
   Scenario: Shared setup - shortcat for shared_step { setup { ... } }
     Given a file named "shared_steps/scenario.rb" with:
@@ -119,4 +123,27 @@ Feature: Shared steps
       """
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "1 scenario (1 passed)"
+
+
+  Scenario: Shared context - shortcat for shared_step 'name' { context 'name' { ... } }
+    Given a file named "shared_steps/scenario.rb" with:
+      """ruby
+      Lopata.shared_context 'calculation' do
+        it('correct') { expect(1 + 1).to eq 2 }
+        it('incorrect') { expect(1 + 2).to eq 4 }
+      end
+      """
+    And a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Action scenario' do
+        verify 'calculation'
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "1 scenario (1 failed)"
+    Then the output should contain:
+      """
+        [+] calculation: correct
+        [!] calculation: incorrect
+      """
 
