@@ -40,6 +40,32 @@ module Lopata
     Lopata::SharedStep.register(name, &block)
   end
 
+  # Register the shared step for setup.
+  # 
+  # shared_setup is a shortcat for shared_step 'name' { setup { .. } }. The block will be arrounded into the setup call.
+  #
+  # @example
+  #     Lopata.shared_setup 'test user' do
+  #       @user = create(:user)
+  #     end
+  #
+  # Shared step may be used in scenarios by name:
+  # @example
+  #     Lopata.define 'user' do
+  #       setup 'test user'
+  #
+  #       it 'exists' do
+  #         expect(@user).to_not be_nil
+  #       end
+  #     end
+  # @param name [String] shared step unique name
+  # @param block [Block] shared setup definition
+  def self.shared_setup(name, &block)
+    Lopata::SharedStep.register(name) do
+      setup(&block)
+    end
+  end
+
   # Yields the global configuration to a block.
   # @yield [Lopata::Configuration] global configuration
   #

@@ -98,3 +98,25 @@ Feature: Shared steps
       """
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "Comma is not allowed in shared step name"
+
+  Scenario: Shared setup - shortcat for shared_step { setup { ... } }
+    Given a file named "shared_steps/scenario.rb" with:
+      """ruby
+      Lopata.shared_setup 'empty data array' do
+        @data = []
+      end
+      """
+    And a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Action scenario' do
+        setup 'empty data array'
+        action { @data << 1 }
+
+        it 'works after initial change' do
+          expect(@data).to eq [1]
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "1 scenario (1 passed)"
+
