@@ -14,15 +14,17 @@ module Lopata
     option :rerun, type: :boolean, aliases: 'r'
     option :keep, type: :boolean, aliases: 'k'
     option :text, aliases: 't'
+    option :list, type: :boolean, aliases: 'l'
     def test(*args)
       trap_interrupt
       configure_from_options
       Lopata::Loader.load_shared_steps
       Lopata::Loader.load_scenarios(*args)
-      world = Lopata.world
-      world.notify_observers(:started, world)
-      world.scenarios.each { |s| s.run }
-      world.notify_observers(:finished, world)
+      if options[:list]
+        list_scenarios
+      else
+        run_scenarios
+      end
     end
 
     default_task :test
@@ -56,6 +58,17 @@ module Lopata
 
       def trap_interrupt
         trap('INT') { exit!(1) }
+      end
+
+      def list_scenarios
+        Lopata.world.scenarios.each { |s| puts s.title }
+      end
+
+      def run_scenarios
+        world = Lopata.world
+        world.notify_observers(:started, world)
+        world.scenarios.each { |s| s.run }
+        world.notify_observers(:finished, world)
       end
     end
   end
