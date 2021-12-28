@@ -33,6 +33,11 @@ class Lopata::Scenario
     execution.metadata
   end
 
+  # @private
+  def to_s
+    %Q{<Lopata::Scenario:"#{execution.title}">}
+  end
+
   private
 
   # @private
