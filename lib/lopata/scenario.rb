@@ -15,6 +15,14 @@ class Lopata::Scenario
     @execution = execution
   end
 
+  # Provide a human-readable representation of this class
+  def inspect
+    "#<#{self.class.name} #{execution.title.inspect}>"
+  end
+  alias to_s inspect
+
+  
+
   # Marks current step as pending
   # @example
   #     it 'pending step' do
@@ -69,6 +77,12 @@ class Lopata::Scenario
       @steps = []
       @scenario = Lopata::Scenario.new(self)
     end
+
+    # Provide a human-readable representation of this class
+    def inspect
+      "#<#{self.class.name} #{title.inspect}>"
+    end
+    alias to_s inspect
 
     def run
       @status = :running
