@@ -17,7 +17,13 @@ module Lopata
       metadata = scenario.metadata
       case condition
       when Hash
-        condition.keys.all? { |k| metadata[k] == condition[k] }
+        condition.keys.all? do |k| 
+          if condition[k].is_a? Array
+            condition[k].include?(metadata[k])
+          else
+            metadata[k] == condition[k]
+          end
+        end
       when Array
         condition.map { |key| metadata[key] }.all?
       when TrueClass, FalseClass

@@ -50,3 +50,25 @@ Feature: Conditional actions, setup and validations
       """
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "2 scenarios (2 passed)"
+
+  Scenario: Multiple conditions
+    Given a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Conditional actions' do
+        diagonal :number,
+          'one' => 1,
+          'two' => 2,
+          'three' => 3,
+          'four' => 4
+
+        it_if({ number: [1, 3, 4] }, 'odd') do
+          expect(number).to be_odd
+        end
+
+        it_if({ number: 2}, 'even') do
+          expect(number).to be_odd
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "4 scenarios (2 passed, 2 failed)"
