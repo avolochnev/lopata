@@ -52,6 +52,10 @@ module Lopata
       request = { status: status, steps: steps, launch: { id: @launch_id, finished: finished } }
       test = test_id(scenario)
       post("/tests/#{test}/attempts.json", body: request)
+    rescue SocketError => e
+      # Ignore network problems
+      puts e.message
+      puts e.backtrace
     end
 
     def step_hash(step)
