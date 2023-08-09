@@ -1,6 +1,6 @@
 module Lopata
   # @private
   module Version
-    STRING = '0.1.20'
+    STRING = '0.1.21'
   end
 end

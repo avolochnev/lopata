@@ -277,6 +277,24 @@ class Lopata::ScenarioBuilder
     end
   end
 
+  # Define memorized runtime method for the scenario.
+  #  
+  # @note
+  #   The method to be called via #method_missing, so it wont override already defined methods.
+  #
+  # @example
+  #   let!(:started) { Time.now }
+  #   it 'started early' do
+  #     first_started = started
+  #     expect(started).to eq first_started
+  #   end
+  def let!(method_name, &block)
+    steps << Lopata::Step.new(:let) do
+      execution.let!(method_name, &block)
+    end
+  end
+
+
   # @!endgroup
 
   # @private

@@ -46,7 +46,7 @@ class Lopata::Scenario
   # @private
   def method_missing(method, *args, &block)
     if execution.let_methods.include?(method)
-      instance_exec(*args, &execution.let_methods[method])
+      execution.let_methods[method].call_in_scenario(self, *args)
     elsif metadata.keys.include?(method)
       metadata[method]
     else
@@ -129,22 +129,66 @@ class Lopata::Scenario
       end
     end
 
-    def let(method_name, &block)
-      # define_singleton_method method_name, &block
-      base =
-        if current_step && !current_step.groups.empty?
-          current_step.groups.last.let_methods
-        else
-          @let_methods
-        end
-      base[method_name] = block
+    def let_base
+      if current_step && !current_step.groups.empty?
+        current_step.groups.last.let_methods
+      else
+        @let_methods
+      end
     end
+
+    def let(method_name, &block)
+      let_base[method_name] = LetMethod.new(&block)
+    end
+
+    def let!(method_name, &block)
+      let_base[method_name] = LetBangMethod.new(&block)
+    end
+
 
     def cleanup
       @title = nil
       @metadata = nil
       @steps = nil
       @scenario = nil
+    end
+  end
+
+  # @private
+  # let! methods incapsulate cached value and calculation block
+  class LetBangMethod
+    attr_reader :block, :calculated, :value
+
+    alias calculated? calculated
+
+    def initialize(&block)
+      @block = block
+      @calculated = false
+      @value = nil
+    end
+
+    def call_in_scenario(scenario, *args)
+      if calculated?
+        value
+      else
+        @value = scenario.instance_exec(&block)
+        @calculated = true
+        @value
+      end
+    end
+  end
+
+  # @private
+  # let methods calculates 
+  class LetMethod
+    attr_reader :block
+
+    def initialize(&block)
+      @block = block
+    end
+
+    def call_in_scenario(scenario, *args)
+      scenario.instance_exec(*args, &block)
     end
   end
 end

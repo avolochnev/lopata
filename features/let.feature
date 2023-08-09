@@ -58,3 +58,24 @@ Feature: Define methods in scenarios
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "1 scenario (1 passed)"
 
+  Scenario: Memorized methods with let!
+    Given a file named "shared_steps/scenario.rb" with:
+      """ruby
+      Lopata.shared_step 'memorized method' do
+        let!(:default_data) { Time.now }
+        setup { @data = default_data }
+      end
+      """
+    Given a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Memorized method defined in shared step' do
+        setup 'memorized method'
+
+        it 'is memorized' do
+          expect(@data).to eq default_data
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "1 scenario (1 passed)"
+
