@@ -1,4 +1,5 @@
 require_relative 'backtrace_formatter'
+require_relative 'group_tree'
 require 'forwardable'
 
 module Lopata
@@ -34,9 +35,20 @@ module Lopata
         statuses[scenario.status] += 1
 
         if scenario.failed?
-          scenario.steps.each do |step|
-            puts colored("  #{status_marker(step.status)} #{step.title}", step.status)
-            puts indent(4, backtrace_formatter.error_message(step.exception, include_backtrace: true)) if step.failed?
+          GroupTree.steps_hierarhy(scenario.steps).walk_through do |step|
+            if step.is_a?(Lopata::StepExecution)
+              next unless step.loggable?
+              puts colored("  #{status_marker(step.status)} #{step.title}", step.status)
+              puts indent(4, backtrace_formatter.error_message(step.exception, include_backtrace: true)) if step.failed?
+            else # GroupTree
+              group = step
+              if %i{ passed skipped }.include?(group.status)
+                puts colored("  #{status_marker(group.status)} #{group.title}", group.status)
+                false
+              else
+                true
+              end
+            end
           end
         end
 

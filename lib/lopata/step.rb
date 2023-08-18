@@ -120,8 +120,11 @@ module Lopata
     end
 
     def title
-      group_title = groups.map { |g| "#{g.title}: " }.join
       "#{group_title}#{step.title}"
+    end
+
+    def group_title
+      groups.map { |g| "#{g.title}: " }.join
     end
 
     def run(scenario)
@@ -168,6 +171,11 @@ module Lopata
     def pending!(message = nil)
       @status = :pending
       @pending_message = message
+    end
+
+    # Need log this step.
+    def loggable?
+      not %i{ let let! }.include?(method_name)
     end
 
     def teardown?

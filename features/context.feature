@@ -44,12 +44,32 @@ Feature: Context
           expect(number).to be < 2
         end
 
-        context 'in group', number: 4 do
+        context 'nested group' do
+          context 'second level nested group' do
+            it 'passed' do
+              expect(number).to eq 1
+            end
+          end
+
+          context 'second level nested group again' do
+            it 'passed again' do
+              expect(number).to eq 1
+            end
+          end
+        end
+
+        context 'in group' do
           it 'failed' do
             expect(number).to be < 1
           end
 
           verify 'in shared step'
+
+          context 'in nested group' do
+            it 'passed again' do
+              expect(number).to eq 1
+            end
+          end
         end
       end
       """
@@ -57,9 +77,11 @@ Feature: Context
     Then the output should contain:
       """
         [+] passed
+        [+] nested group
         [!] in group: failed
       """
     And the output should contain:
       """
         [+] in group: shared step
+        [+] in group: in nested group
       """

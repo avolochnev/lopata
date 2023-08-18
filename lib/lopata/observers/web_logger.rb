@@ -1,6 +1,7 @@
 require 'httparty'
 require 'json'
 require_relative 'backtrace_formatter'
+require_relative 'group_tree'
 
 module Lopata
   module Observers
@@ -48,7 +49,24 @@ module Lopata
 
     def add_attempt(scenario, finished)
       status = scenario.failed? ? Lopata::FAILED : Lopata::PASSED
-      steps = scenario.steps.map { |s| step_hash(s) }
+      steps = []
+      GroupTree.steps_hierarhy(scenario.steps).walk_through do |step|
+        if step.is_a?(Lopata::StepExecution)
+          next unless step.loggable?
+          steps << step_hash(step)
+        else # GroupTree
+
+          group = step
+          if %i{ passed skipped }.include?(group.status)
+            steps << group_hash(group)
+            false
+          else
+            true
+          end
+        end
+      end
+
+      steps = scenario.steps.select(&:loggable?).map { |s| step_hash(s) }
       request = { status: status, steps: steps, launch: { id: @launch_id, finished: finished } }
       test = test_id(scenario)
       post("/tests/#{test}/attempts.json", body: request)
@@ -65,6 +83,10 @@ module Lopata
         hash[:backtrace] = backtrace_for(step)
       end
       hash
+    end
+
+    def group_hash(group)
+      { status: group.status, title: group.title }
     end
 
     def test_id(scenario)

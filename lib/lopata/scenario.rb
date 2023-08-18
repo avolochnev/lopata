@@ -145,7 +145,6 @@ class Lopata::Scenario
       let_base[method_name] = LetBangMethod.new(&block)
     end
 
-
     def cleanup
       @title = nil
       @metadata = nil

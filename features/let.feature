@@ -58,6 +58,26 @@ Feature: Define methods in scenarios
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "1 scenario (1 passed)"
 
+  Scenario: Let methods are not included in output
+    Given a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Output without let' do
+        setup { @one = 1 }
+        let(:two) { 2 }
+
+        it 'one eq two' do
+          expect(@one).to eq two
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "1 scenario (1 failed)"
+    And the output should contain:
+      """
+        [+] Untitled setup
+        [!] one eq two
+      """
+
   Scenario: Memorized methods with let!
     Given a file named "shared_steps/scenario.rb" with:
       """ruby
