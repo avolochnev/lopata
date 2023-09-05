@@ -1,14 +1,19 @@
 module Lopata
   # @private
   class Condition
-    attr_reader :condition, :positive
+    attr_reader :condition, :positive, :dynamic
     def initialize(condition, positive: true)
       @condition, @positive = condition, positive
+      @dynamic = @condition.is_a?(Proc)
     end
 
     alias positive? positive
+    alias dynamic? dynamic
 
+    # Match scenario on build-time. 
     def match?(scenario)
+      # dynamic steps matche scenario in build-time: will be verified later
+      return true if dynamic?  
       matched = match_metadata?(scenario)
       positive? ? matched : !matched
     end
@@ -33,5 +38,10 @@ module Lopata
       end
     end
 
+    def match_dynamic?(scenario_runtime)
+      return false unless dynamic?
+      matched = scenario_runtime.instance_exec(&condition)
+      positive? ? matched : !matched
+    end
   end
 end

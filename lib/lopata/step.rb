@@ -25,7 +25,7 @@ module Lopata
     def execution_steps(scenario, groups: [])
       return [] if condition && !condition.match?(scenario)
       return [] unless block
-      [StepExecution.new(self, groups, &block)]
+      [StepExecution.new(self, groups, condition: condition, &block)]
     end
   end
 
@@ -42,10 +42,10 @@ module Lopata
             steps += shared_step.execution_steps(scenario, groups: groups)
           end
         elsif step.is_a?(Proc)
-          steps << StepExecution.new(self, groups, &step)
+          steps << StepExecution.new(self, groups, condition: condition, &step)
         end
       end
-      steps << StepExecution.new(self, groups, &block) if block
+      steps << StepExecution.new(self, groups, condition: condition, &block) if block
       steps.reject { |s| !s.block }
     end
 
@@ -105,18 +105,19 @@ module Lopata
 
   #@private
   class StepExecution
-    attr_reader :step, :status, :exception, :block, :pending_message, :groups
+    attr_reader :step, :status, :exception, :block, :pending_message, :groups, :condition
     extend Forwardable
     def_delegators :step, :method_name
 
     class PendingStepFixedError < StandardError; end
 
-    def initialize(step, groups, &block)
+    def initialize(step, groups, condition: nil, &block)
       @step = step
       @status = :not_runned
       @exception = nil
       @block = block
       @groups = groups
+      @condition = condition
     end
 
     def title
@@ -130,6 +131,10 @@ module Lopata
     def run(scenario)
       @status = :running
       begin
+        unless check_dynamic_condition?(scenario)
+          @status = :ignored
+          return
+        end
         run_step(scenario)
         if pending?
           @status = :failed
@@ -148,6 +153,22 @@ module Lopata
       scenario.instance_exec(&block)
     end
 
+    def check_dynamic_condition?(scenario)
+      dynamic_conditions.each do
+        return false unless _1.match_dynamic?(scenario)
+      end
+      true
+    end
+
+    def dynamic_conditions
+      conds = []
+      conds << condition if condition&.dynamic?
+      groups.each do
+        conds << _1.condition if _1.condition&.dynamic?
+      end
+      conds
+    end
+
     def failed?
       status == :failed
     end
@@ -158,6 +179,10 @@ module Lopata
 
     def skipped?
       status == :skipped
+    end
+
+    def ignored?
+      status == :ignored
     end
 
     def skip!
@@ -175,6 +200,7 @@ module Lopata
 
     # Need log this step.
     def loggable?
+      return false if ignored?
       not %i{ let let! }.include?(method_name)
     end
 
