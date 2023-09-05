@@ -39,7 +39,8 @@ module Lopata
         if step.is_a?(String)
           Lopata::SharedStep.find(step).steps.each do |shared_step|
             next if shared_step.condition && !shared_step.condition.match?(scenario)
-            steps += shared_step.execution_steps(scenario, groups: groups)
+            shared_group = SharedGroupStep.new(:shared_step)
+            steps += shared_step.execution_steps(scenario, groups: groups + [shared_group])
           end
         elsif step.is_a?(Proc)
           steps << StepExecution.new(self, groups, condition: condition, &step)
@@ -100,6 +101,16 @@ module Lopata
       builder.instance_exec(&@block)
       @steps = builder.steps
       @block = nil
+    end
+  end
+
+  # @private
+  # Fake group for shared step instance
+  # Used to build group hierarhy including chared steps
+  class SharedGroupStep < Step
+    # stub title - should not be used in scenario/step name generation.
+    def title 
+      ''
     end
   end
 
@@ -185,6 +196,10 @@ module Lopata
       status == :ignored
     end
 
+    def ignored!
+      status == :ignored
+    end
+
     def skip!
       @status = :skipped
     end
@@ -210,6 +225,10 @@ module Lopata
 
     def teardown_group?(group = nil)
       teardown? && self.groups.last == group
+    end
+
+    def in_group?(group)
+      groups.include?(group)
     end
 
     def skip_rest_on_failure?

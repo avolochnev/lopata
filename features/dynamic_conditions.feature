@@ -43,8 +43,8 @@ Feature: Conditions calculated during script running.
             expect(last_item).to_not be_nil
           end
 
-          it 'equial 1' do
-            expect(last_item).to eq 1
+          it 'equial 2' do
+            expect(last_item).to eq 2 # failed
           end
         end
 
@@ -56,5 +56,5 @@ Feature: Conditions calculated during script running.
       end
       """
     When I run `bundle exec lopata scenario.rb`
-    Then the output should contain "2 scenarios (2 passed)"
+    Then the output should contain "2 scenarios (1 failed, 1 passed)"
 

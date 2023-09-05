@@ -12,7 +12,7 @@ module Lopata
 
     # Match scenario on build-time. 
     def match?(scenario)
-      # dynamic steps matche scenario in build-time: will be verified later
+      # dynamic steps match scenario in build-time: will be verified later
       return true if dynamic?  
       matched = match_metadata?(scenario)
       positive? ? matched : !matched

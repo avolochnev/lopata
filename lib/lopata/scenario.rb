@@ -90,7 +90,17 @@ class Lopata::Scenario
     end
 
     def run_step(step)
-      return if step.skipped?
+      return if step.skipped? || step.ignored?
+      groups = step.groups 
+      if groups.length > 0 && groups != @current_groups
+        @current_groups = groups
+        condition = groups.last.condition
+        if condition&.dynamic? && !condition.match_dynamic?(scenario)
+          step.ignored!
+          ignore_groups(groups)
+          return
+        end
+      end
       @current_step = step
       step.run(scenario)
       skip_rest if step.failed? && step.skip_rest_on_failure?
@@ -111,6 +121,10 @@ class Lopata::Scenario
 
     def skip_rest
       steps.select { |s| s.status == :not_runned && !s.teardown? }.each(&:skip!)
+    end
+
+    def ignore_groups(groups)
+      steps.select { _1.status == :not_runned && _1.groups.take(groups.length) == groups }.each(&:ignored!)
     end
 
     def metadata
