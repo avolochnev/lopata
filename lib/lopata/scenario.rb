@@ -45,8 +45,9 @@ class Lopata::Scenario
 
   # @private
   def method_missing(method, *args, &block)
-    if execution.let_methods.include?(method)
-      execution.let_methods[method].call_in_scenario(self, *args)
+
+    if (let_method = execution.find_let_method(method))
+      let_method.call_in_scenario(self, *args)
     elsif metadata.keys.include?(method)
       metadata[method]
     else
@@ -56,20 +57,18 @@ class Lopata::Scenario
 
   # @private
   def respond_to_missing?(method, *)
-    execution.let_methods.include?(method) or metadata.keys.include?(method) or super
+    execution.find_let_method(method) or metadata.keys.include?(method) or super
   end
 
   # @private
   # Scenario execution and live-cycle information
   class Execution
-    attr_reader :scenario, :status, :title, :current_step, :top
+    attr_reader :scenario, :current_step, :top
 
-    def initialize(title, options_title, metadata = {})
-      @title = [title, options_title].compact.reject(&:empty?).join(' ')
-      @let_methods = {}
-      @status = :not_runned
+    def initialize(title, metadata = {})
       @scenario = Lopata::Scenario.new(self)
-      @top = Lopata::GroupExecution.new(Lopata::TopStep.new(metadata: metadata), nil, steps: [])
+      @top = Lopata::GroupExecution.new(Lopata::TopStep.new(title, metadata: metadata), nil, steps: [])
+      @current_step = @top
     end
 
     # Provide a human-readable representation of this class
@@ -83,10 +82,8 @@ class Lopata::Scenario
     end
 
     def run
-      @status = :running
       world.notify_observers(:scenario_started, self)
-      @status = run_step(top)
-      # @status = top.steps.any?(&:failed?) ? :failed : :passed
+      run_step(top)
       world.notify_observers(:scenario_finished, self)
       cleanup
     end
@@ -127,36 +124,46 @@ class Lopata::Scenario
     end
 
     def metadata
-      current_step&.metadata || top.metadata
+      current_step.metadata
     end
 
     def let_methods
-      if current_step
-        @let_methods.merge(current_step.let_methods)
-      else
-        @let_methods
-      end
+      current_step.let_methods
+    end
+
+    def find_let_method(name)
+      current_step.find_let_method(name)
+    end
+
+    def title
+      top.title
+    end
+
+    def status
+      top.status
     end
 
     def let_base
-      if current_step && current_step.parent
-        current_step.parent.step.let_methods
+      if current_step.group?
+        current_step
       else
-        @let_methods
+        current_step.parent
       end
     end
 
     def let(method_name, &block)
-      let_base[method_name] = LetMethod.new(&block)
+      let_base.add_let_method(method_name, LetMethod.new(&block))
     end
 
     def let!(method_name, &block)
-      let_base[method_name] = LetBangMethod.new(&block)
+      let_base.add_let_method(method_name, LetBangMethod.new(&block))
     end
 
     def cleanup
       @title = nil
       @scenario = nil
+      @top = nil
+      @current_step = nil
     end
   end
 

@@ -38,7 +38,8 @@ class Lopata::ScenarioBuilder
     filters = Lopata.configuration.filters
     option_combinations.each do |option_set|
       metadata = common_metadata.merge(option_set.metadata)
-      scenario = Lopata::Scenario::Execution.new(title, option_set.title, metadata)
+      scenario_title = [title, option_set.title].compact.reject(&:empty?).join(' ')
+      scenario = Lopata::Scenario::Execution.new(scenario_title, metadata)
     
       unless filters.empty?
         next unless filters.all? { |f| f[scenario] }

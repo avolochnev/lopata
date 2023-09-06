@@ -87,10 +87,6 @@ module Lopata
       [group]
     end
 
-    def let_methods
-      @let_methods ||= {}
-    end
-
     # Group step's block is a block in context of builder, not scenario. So hide the @block to not be used in scenario.
     def initialized!
       builder = Lopata::ScenarioBuilder.new(title)
@@ -102,19 +98,10 @@ module Lopata
 
   # @private
   class TopStep < Step
-    def initialize(metadata: {})
-      super(:top, nil, metadata: metadata)
+    def initialize(title, metadata: {})
+      super(:top, title, metadata: metadata)
     end
-
-    def let_methods
-      @let_methods ||= {}
-    end
-
-    # No title for top step
-    def title
-      nil
-    end
-  end
+ end
 
   # @private
   # Abstract execution step. Composition, may be group or step.
@@ -132,6 +119,10 @@ module Lopata
 
     def group?
       false
+    end
+
+    def top?
+      !parent
     end
 
     def teardown?
@@ -155,6 +146,10 @@ module Lopata
         result = parent.metadata.merge(result)
       end
       result
+    end
+
+    def find_let_method(name)
+      parent&.find_let_method(name)
     end
 
     def failed?
@@ -182,9 +177,8 @@ module Lopata
     end
 
     def title
-      base_title = parent&.title
-      if base_title
-        "#{base_title}: #{step.title}"
+      if parent && !parent.top?
+        "#{parent.title}: #{step.title}"
       else
         step.title
       end
@@ -208,6 +202,7 @@ module Lopata
     def initialize(step, parent, condition: nil, steps:)
       super(step, parent, condition: condition)
       @steps = steps
+      @let_methods = {}
     end
 
     def group?
@@ -229,12 +224,12 @@ module Lopata
       @status
     end
 
-    def let_methods
-      result = step.let_methods || {}
-      if parent
-        result = parent.let_methods.merge(result)
-      end
-      result
+    def find_let_method(name)
+      @let_methods[name] || parent&.find_let_method(name)
+    end
+
+    def add_let_method(name, method)
+      @let_methods[name] = method
     end
 
     def ignored!
@@ -285,12 +280,6 @@ module Lopata
     def pending!(message = nil)
       @status = :pending
       @pending_message = message
-    end
-
-    # Step methods is a combination of let_methods for all contexts (group) the step included
-    def let_methods
-      return {} unless parent
-      parent.let_methods
     end
   end
 end
