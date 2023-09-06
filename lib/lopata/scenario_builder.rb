@@ -39,15 +39,18 @@ class Lopata::ScenarioBuilder
     option_combinations.each do |option_set|
       metadata = common_metadata.merge(option_set.metadata)
       scenario = Lopata::Scenario::Execution.new(title, option_set.title, metadata)
-
+    
       unless filters.empty?
         next unless filters.all? { |f| f[scenario] }
       end
 
+      exec_steps = []
       steps_with_hooks.each do |step|
         next if step.condition && !step.condition.match?(scenario)
-        step.execution_steps(scenario).each { |s| scenario.steps << s }
+        step.execution_steps(scenario, parent: scenario.top).each { |s| exec_steps << s }
       end
+      scenario.steps.push(*exec_steps.reject(&:teardown?))
+      scenario.steps.push(*exec_steps.select(&:teardown?))
 
       world.scenarios << scenario
     end

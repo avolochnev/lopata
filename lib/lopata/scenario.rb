@@ -62,15 +62,14 @@ class Lopata::Scenario
   # @private
   # Scenario execution and live-cycle information
   class Execution
-    attr_reader :scenario, :status, :steps, :title, :current_step
+    attr_reader :scenario, :status, :title, :current_step, :top
 
     def initialize(title, options_title, metadata = {})
       @title = [title, options_title].compact.reject(&:empty?).join(' ')
-      @metadata = metadata
       @let_methods = {}
       @status = :not_runned
-      @steps = []
       @scenario = Lopata::Scenario.new(self)
+      @top = Lopata::GroupExecution.new(Lopata::TopStep.new(metadata: metadata), nil, steps: [])
     end
 
     # Provide a human-readable representation of this class
@@ -79,32 +78,44 @@ class Lopata::Scenario
     end
     alias to_s inspect
 
+    def steps
+      top.steps
+    end
+
     def run
       @status = :running
-      sort_steps
       world.notify_observers(:scenario_started, self)
-      steps.each(&method(:run_step))
-      @status = steps.any?(&:failed?) ? :failed : :passed
+      @status = run_step(top)
+      # @status = top.steps.any?(&:failed?) ? :failed : :passed
       world.notify_observers(:scenario_finished, self)
       cleanup
     end
 
     def run_step(step)
-      return if step.skipped? || step.ignored?
-      groups = step.groups 
-      if groups.length > 0 && groups != @current_groups
-        @current_groups = groups
-        condition = groups.last.condition
-        if condition&.dynamic? && !condition.match_dynamic?(scenario)
-          step.ignored!
-          ignore_groups(groups)
-          return
-        end
-      end
       @current_step = step
-      step.run(scenario)
-      skip_rest if step.failed? && step.skip_rest_on_failure?
-      @current_step = nil
+      return :skipped if step.skipped?
+      return :ignored if step.ignored?
+      if step.condition&.dynamic && !step.condition.match_dynamic?(scenario)
+        step.ignored!
+        return :ignored
+      end
+      if step.group?
+        skip_rest = false
+        step.steps.each do
+          if _1.teardown?
+            run_step(_1)
+          elsif skip_rest
+            _1.skip!
+          else
+            run_step(_1)
+            skip_rest = true if _1.failed? && _1.skip_rest_on_failure?
+          end 
+        end
+        step.status!
+      else
+        step.run(scenario)
+        step.status
+      end
     end
 
     def world
@@ -115,24 +126,8 @@ class Lopata::Scenario
       status == :failed
     end
 
-    def sort_steps
-      @steps = steps.reject(&:teardown_group?) + steps.select(&:teardown_group?)
-    end
-
-    def skip_rest
-      steps.select { |s| s.status == :not_runned && !s.teardown? }.each(&:skip!)
-    end
-
-    def ignore_groups(groups)
-      steps.select { _1.status == :not_runned && _1.groups.take(groups.length) == groups }.each(&:ignored!)
-    end
-
     def metadata
-      if current_step
-        @metadata.merge(current_step.metadata)
-      else
-        @metadata
-      end
+      current_step&.metadata || top.metadata
     end
 
     def let_methods
@@ -144,8 +139,8 @@ class Lopata::Scenario
     end
 
     def let_base
-      if current_step && !current_step.groups.empty?
-        current_step.groups.last.let_methods
+      if current_step && current_step.parent
+        current_step.parent.step.let_methods
       else
         @let_methods
       end
@@ -161,8 +156,6 @@ class Lopata::Scenario
 
     def cleanup
       @title = nil
-      @metadata = nil
-      @steps = nil
       @scenario = nil
     end
   end

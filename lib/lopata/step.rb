@@ -7,12 +7,13 @@ module Lopata
     # metadata overrien by the step.
     attr_accessor :metadata
 
-    def initialize(method_name, *args, condition: nil, shared_step: nil, &block)
+    def initialize(method_name, *args, condition: nil, shared_step: nil, metadata: {}, &block)
       @method_name = method_name
       @args = args
       @block = block
       @shared_step = shared_step
       @condition = condition
+      @metadata = metadata
       initialized! if defined? initialized!
     end
 
@@ -22,31 +23,31 @@ module Lopata
       base_title
     end
 
-    def execution_steps(scenario, groups: [])
+    def execution_steps(scenario, parent:)
       return [] if condition && !condition.match?(scenario)
       return [] unless block
-      [StepExecution.new(self, groups, condition: condition, &block)]
+      [StepExecution.new(self, parent, condition: condition, &block)]
     end
   end
 
   # @private
   # Used for action, setup, teardown, verify
   class ActionStep < Step
-    def execution_steps(scenario, groups: [])
+    def execution_steps(scenario, parent:)
       steps = []
       return steps if condition && !condition.match?(scenario)
       convert_args(scenario).each do |step|
         if step.is_a?(String)
           Lopata::SharedStep.find(step).steps.each do |shared_step|
             next if shared_step.condition && !shared_step.condition.match?(scenario)
-            steps += shared_step.execution_steps(scenario, groups: groups)
+            steps += shared_step.execution_steps(scenario, parent: parent)
           end
         elsif step.is_a?(Proc)
-          steps << StepExecution.new(self, groups, condition: condition, &step)
+          steps << StepExecution.new(self, parent, condition: condition, &step)
         end
       end
-      steps << StepExecution.new(self, groups, condition: condition, &block) if block
-      steps.reject { |s| !s.block }
+      steps << StepExecution.new(self, parent, condition: condition, &block) if block
+      steps
     end
 
     def separate_args(args)
@@ -74,21 +75,21 @@ module Lopata
   # Used for context
   class GroupStep < Step
 
-    def execution_steps(scenario, groups: [])
+    def execution_steps(scenario, parent: nil)
       steps = []
       return steps if condition && !condition.match?(scenario)
+      group = GroupExecution.new(self, parent, steps: steps, condition: condition)
       @steps.each do |step|
-        steps += step.execution_steps(scenario, groups: groups + [self])
+        steps += step.execution_steps(scenario, parent: group)
       end
-      steps.reject! { |s| !s.block }
-      steps.reject { |s| s.teardown_group?(self) } + steps.select { |s| s.teardown_group?(self) }
+      group.steps.push(*steps.reject(&:teardown?))
+      group.steps.push(*steps.select(&:teardown?))
+      [group]
     end
 
     def let_methods
       @let_methods ||= {}
     end
-
-    private
 
     # Group step's block is a block in context of builder, not scenario. So hide the @block to not be used in scenario.
     def initialized!
@@ -99,70 +100,61 @@ module Lopata
     end
   end
 
-  #@private
-  class StepExecution
-    attr_reader :step, :status, :exception, :block, :pending_message, :groups, :condition
+  # @private
+  class TopStep < Step
+    def initialize(metadata: {})
+      super(:top, nil, metadata: metadata)
+    end
+
+    def let_methods
+      @let_methods ||= {}
+    end
+
+    # No title for top step
+    def title
+      nil
+    end
+  end
+
+  # @private
+  # Abstract execution step. Composition, may be group or step.
+  class BaseExecution
+    attr_reader :step, :status, :parent, :condition
     extend Forwardable
     def_delegators :step, :method_name
 
-    class PendingStepFixedError < StandardError; end
-
-    def initialize(step, groups, condition: nil, &block)
+    def initialize(step, parent, condition: nil)
       @step = step
+      @parent = parent
       @status = :not_runned
-      @exception = nil
-      @block = block
-      @groups = groups
       @condition = condition
     end
 
-    def title
-      "#{group_title}#{step.title}"
+    def group?
+      false
     end
 
-    def group_title
-      groups.map { |g| "#{g.title}: " }.join
+    def teardown?
+      %i{ teardown cleanup }.include?(method_name)
     end
 
-    def run(scenario)
-      @status = :running
-      begin
-        unless check_dynamic_condition?(scenario)
-          @status = :ignored
-          return
-        end
-        run_step(scenario)
-        if pending?
-          @status = :failed
-          raise PendingStepFixedError, 'Expected step to fail since it is pending, but it passed.'
-        else
-          @status = :passed
-        end
-      rescue Exception => e
-        @status = :failed unless pending?
-        @exception = e
+    def parents
+      result = []
+      prnt = parent
+      while prnt
+        result << prnt
+        prnt = prnt.parent
       end
+      result
     end
 
-    def run_step(scenario)
-      return unless block
-      scenario.instance_exec(&block)
-    end
-
-    def check_dynamic_condition?(scenario)
-      dynamic_conditions.each do
-        return false unless _1.match_dynamic?(scenario)
+     # Step metadata is a combination of metadata given for step and all contexts (groups) the step included
+    def metadata
+      result = step.metadata || {}
+      if parent
+        result = parent.metadata.merge(result)
       end
-      true
-    end
-
-    def dynamic_conditions
-      conds = []
-      conds << condition if condition&.dynamic?
-      groups.each do
-        conds << _1.condition if _1.condition&.dynamic?
-      end
-      conds
+      result
     end
 
     def failed?
@@ -189,6 +181,103 @@ module Lopata
       @status = :skipped
     end
 
+    def title
+      base_title = parent&.title
+      if base_title
+        "#{base_title}: #{step.title}"
+      else
+        step.title
+      end
+    end
+
+    # Need log this step.
+    def loggable?
+      return false if ignored?
+      not %i{ let let! }.include?(method_name)
+    end
+
+    def skip_rest_on_failure?
+      %i{ setup action }.include?(method_name)
+    end
+  end
+
+  # @private
+  class GroupExecution < BaseExecution
+    attr_reader :steps
+
+    def initialize(step, parent, condition: nil, steps:)
+      super(step, parent, condition: condition)
+      @steps = steps
+    end
+
+    def group?
+      true
+    end
+
+    def status!
+      # return @status if @status
+      statuses = steps.map(&:status!).uniq
+      @status = 
+        if statuses.length == 1
+          statuses.first
+        elsif statuses.include?(:failed)
+          :failed
+        else
+          statuses.first || :skipped
+        end
+      @status = :passed if @status == :pending
+      @status
+    end
+
+    def let_methods
+      result = step.let_methods || {}
+      if parent
+        result = parent.let_methods.merge(result)
+      end
+      result
+    end
+
+    def ignored!
+      @status = :ignored
+      steps.each(&:ignored!)
+    end
+  end
+
+  # @private
+  class StepExecution < BaseExecution
+    attr_reader :exception, :block, :pending_message
+
+    class PendingStepFixedError < StandardError; end
+
+    def initialize(step, parent, condition: nil, &block)
+      super(step, parent, condition: condition)
+      @exception = nil
+      @block = block
+    end
+
+    alias status! status
+
+    def run(scenario)
+      @status = :running
+      begin
+        run_step(scenario)
+        if pending?
+          @status = :failed
+          raise PendingStepFixedError, 'Expected step to fail since it is pending, but it passed.'
+        else
+          @status = :passed
+        end
+      rescue Exception => e
+        @status = :failed unless pending?
+        @exception = e
+      end
+    end
+
+    def run_step(scenario)
+      return unless block
+      scenario.instance_exec(&block)
+    end
+
     def pending?
       status == :pending
     end
@@ -198,36 +287,10 @@ module Lopata
       @pending_message = message
     end
 
-    # Need log this step.
-    def loggable?
-      return false if ignored?
-      not %i{ let let! }.include?(method_name)
-    end
-
-    def teardown?
-      %i{ teardown cleanup }.include?(method_name)
-    end
-
-    def teardown_group?(group = nil)
-      teardown? && self.groups.last == group
-    end
-
-    def in_group?(group)
-      groups.include?(group)
-    end
-
-    def skip_rest_on_failure?
-      %i{ setup action }.include?(method_name)
-    end
-
-    # Step metadata is a combination of metadata given for step and all contexts (groups) the step included
-    def metadata
-      (groups + [step]).compact.inject({}) { |merged, part| merged.merge(part.metadata || {}) }
-    end
-
     # Step methods is a combination of let_methods for all contexts (group) the step included
     def let_methods
-      (groups).compact.inject({}) { |merged, part| merged.merge(part.let_methods || {}) }
+      return {} unless parent
+      parent.let_methods
     end
   end
 end

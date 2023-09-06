@@ -71,6 +71,14 @@ Feature: Context
             end
           end
         end
+
+        context 'with override' do
+          let(:number) { 2 }
+
+          it 'overried' do
+            expect(number).to eq 2
+          end
+        end
       end
       """
     When I run `bundle exec lopata scenario.rb`

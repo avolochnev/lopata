@@ -54,7 +54,7 @@ Feature: Conditions calculated during script running.
             expect(last_item).to be_nil
           end
 
-          context_unless -> {last_item}, 'nested' do
+          context_if -> { two == 2 }, 'nested' do
             it 'no value' do
               expect(last_item).to_not eq two
             end
