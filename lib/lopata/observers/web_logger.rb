@@ -69,7 +69,7 @@ module Lopata
             hashes += build_hashes(step.steps)
           end
         else
-          hashes << step_hash(hash)
+          hashes << step_hash(step)
         end
       end
       hashes
