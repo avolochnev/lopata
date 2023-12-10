@@ -46,6 +46,12 @@ module Lopata
       @launch_id = JSON.parse(post("/projects/#{project_code}/builds/#{build_number}/launches.json", body: {total: count}).body)['id']
     end
 
+    # Create test stubs for all the scenarios within then build
+    def init_scenarios(world)
+      post("/projects/#{project_code}/builds/#{build_number}/tests.json", 
+        body: { scenarios: world.scenarios.map { { title: _1.title } } })
+    end
+
     def add_attempt(scenario, finished)
       status = scenario.failed? ? Lopata::FAILED : Lopata::PASSED
       steps = build_hashes(scenario.steps)

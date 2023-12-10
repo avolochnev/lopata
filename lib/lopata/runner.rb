@@ -15,6 +15,7 @@ module Lopata
     option :keep, type: :boolean, aliases: 'k'
     option :text, aliases: 't'
     option :list, type: :boolean, aliases: 'l'
+    option :init, type: :boolean, aliases: 'i'
     def test(*args)
       trap_interrupt
       configure_from_options
@@ -22,6 +23,8 @@ module Lopata
       Lopata::Loader.load_scenarios(*args)
       if options[:list]
         list_scenarios
+      elsif
+        init_scenarios
       else
         run_scenarios
       end
@@ -62,6 +65,11 @@ module Lopata
 
       def list_scenarios
         Lopata.world.scenarios.each { |s| puts s.title }
+      end
+
+      def init_scenarios
+        client = Lopata::Client.new
+        client.init_scenarios(Lopata.world)
       end
 
       def run_scenarios
