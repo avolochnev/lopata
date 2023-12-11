@@ -23,7 +23,7 @@ module Lopata
       Lopata::Loader.load_scenarios(*args)
       if options[:list]
         list_scenarios
-      elsif
+      elsif options[:init]
         init_scenarios
       else
         run_scenarios
