@@ -7,12 +7,16 @@ module Lopata
     class ConsoleOutputObserver < BaseObserver
       extend Forwardable
       # @private
-      attr_reader :output
+      attr_reader :output, :statuses
       # @private
       def_delegators :output, :puts, :flush
 
       def initialize
         @output = $stdout
+      end
+
+      def started(world)
+        @statuses = {}
       end
 
       # @see Lopata::Observers::BaseObserver#finished
@@ -103,10 +107,6 @@ module Lopata
       # @return [String] text with indent
       def indent(cols, text)
         text.split("\n").map { |line| " " * cols + line }.join("\n")
-      end
-
-      def statuses
-        @statuses ||= {}
       end
     end
   end

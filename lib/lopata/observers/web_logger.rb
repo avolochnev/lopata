@@ -115,6 +115,10 @@ module Lopata
       to_rerun + get_json("/projects/#{project_code}/builds/#{build_number}/failures.json")
     end
 
+    def need_run
+      get_json("/projects/#{project_code}/builds/#{build_number}/need_run.json")
+    end
+
     private
 
     def get_json(path)

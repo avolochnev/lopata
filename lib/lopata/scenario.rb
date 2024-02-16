@@ -63,12 +63,12 @@ class Lopata::Scenario
   # @private
   # Scenario execution and live-cycle information
   class Execution
-    attr_reader :scenario, :current_step, :top
+    attr_reader :scenario, :current_step, :top, :title, :base_metadata
 
     def initialize(title, metadata = {})
-      @scenario = Lopata::Scenario.new(self)
-      @top = Lopata::GroupExecution.new(Lopata::TopStep.new(title, metadata: metadata), nil, steps: [])
-      @current_step = @top
+      @title = title
+      @base_metadata = metadata
+      setup
     end
 
     # Provide a human-readable representation of this class
@@ -82,10 +82,17 @@ class Lopata::Scenario
     end
 
     def run
+      setup unless @scenario # for second run if need
       world.notify_observers(:scenario_started, self)
       run_step(top)
       world.notify_observers(:scenario_finished, self)
       cleanup
+    end
+
+    def setup
+      @scenario = Lopata::Scenario.new(self)
+      @top = Lopata::GroupExecution.new(Lopata::TopStep.new(title, metadata: base_metadata), nil, steps: [])
+      @current_step = @top
     end
 
     def run_step(step)
@@ -135,10 +142,6 @@ class Lopata::Scenario
       current_step.find_let_method(name)
     end
 
-    def title
-      top.title
-    end
-
     def status
       top.status
     end
@@ -160,7 +163,6 @@ class Lopata::Scenario
     end
 
     def cleanup
-      @title = nil
       @scenario = nil
       @top = nil
       @current_step = nil
