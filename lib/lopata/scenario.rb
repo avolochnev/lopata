@@ -68,6 +68,7 @@ class Lopata::Scenario
     def initialize(title, metadata = {})
       @title = title
       @base_metadata = metadata
+      @top = Lopata::GroupExecution.new(Lopata::TopStep.new(title, metadata: base_metadata), nil, steps: [])
       setup
     end
 
@@ -82,7 +83,10 @@ class Lopata::Scenario
     end
 
     def run
-      setup unless @scenario # for second run if need
+      unless @scenario # for second run if need
+        setup
+        top.reset_status
+      end
       world.notify_observers(:scenario_started, self)
       run_step(top)
       world.notify_observers(:scenario_finished, self)
@@ -91,7 +95,6 @@ class Lopata::Scenario
 
     def setup
       @scenario = Lopata::Scenario.new(self)
-      @top = Lopata::GroupExecution.new(Lopata::TopStep.new(title, metadata: base_metadata), nil, steps: [])
       @current_step = @top
     end
 
@@ -164,7 +167,6 @@ class Lopata::Scenario
 
     def cleanup
       @scenario = nil
-      @top = nil
       @current_step = nil
     end
   end

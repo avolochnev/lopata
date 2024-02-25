@@ -113,8 +113,12 @@ module Lopata
     def initialize(step, parent, condition: nil)
       @step = step
       @parent = parent
-      @status = :not_runned
       @condition = condition
+      reset_status
+    end
+
+    def reset_status
+      @status = :not_runned
     end
 
     def group?
@@ -203,6 +207,12 @@ module Lopata
       super(step, parent, condition: condition)
       @steps = steps
       @let_methods = {}
+    end
+
+    def reset_status
+      super
+      return unless @steps
+      @steps.each(&:reset_status)
     end
 
     def group?

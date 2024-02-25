@@ -26,6 +26,6 @@ Gem::Specification.new do |s|
   s.add_dependency "thor", '~> 1.0'
   s.add_dependency "rspec-expectations", '~> 3.9'
 
-  s.add_development_dependency "cucumber", "~> 3.1"
-  s.add_development_dependency "aruba", "~> 1.0"
+  s.add_development_dependency "cucumber", "~> 9.1"
+  s.add_development_dependency "aruba", "~> 2.2"
 end
