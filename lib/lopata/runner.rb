@@ -107,6 +107,6 @@ module Lopata
 end
 
 unless ARGV.first == 'new'
-  eval File.binread('./Lopatafile') if File.exists?('./Lopatafile')
+  eval File.binread('./Lopatafile') if File.exist?('./Lopatafile')
 end
 
