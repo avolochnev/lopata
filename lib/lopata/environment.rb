@@ -18,7 +18,7 @@ module Lopata
       require 'yaml'
       @config = {}
       config_filename = "./config/environments/#{Lopata.configuration.env}.yml"
-      @config = YAML::load(File.open(config_filename)) if File.exists?(config_filename)
+      @config = YAML::load(File.open(config_filename)) if File.exist?(config_filename)
     end
 
     # Access to environment settings
