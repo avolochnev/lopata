@@ -95,7 +95,7 @@ module Lopata
       def status_marker(status)
         case status
         when :failed then "[!]"
-        when :skipped then "[-]"
+        when :skipped, :ignored then "[-]"
         when :pending then "[?]"
         else "[+]"
         end
