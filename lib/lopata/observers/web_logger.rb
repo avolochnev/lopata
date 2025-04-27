@@ -58,7 +58,7 @@ module Lopata
       request = { status: status, steps: steps, launch: { id: @launch_id, finished: finished } }
       test = test_id(scenario)
       post("/tests/#{test}/attempts.json", body: request)
-    rescue SocketError, Timeout::Error => e
+    rescue SocketError, Timeout::Error, Errno::ECONNRESET => e
       # Ignore network problems. Continue with next scenario when cannot log results.
       puts e.message
       puts e.backtrace
