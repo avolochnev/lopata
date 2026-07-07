@@ -106,7 +106,7 @@ module Lopata
   # @private
   # Abstract execution step. Composition, may be group or step.
   class BaseExecution
-    attr_reader :step, :status, :parent, :condition
+    attr_reader :step, :status, :parent, :condition, :exception
     extend Forwardable
     def_delegators :step, :method_name
 
@@ -220,7 +220,7 @@ module Lopata
     end
 
     def status!
-      # return @status if @status
+      return :failed if exception
       statuses = steps.map(&:status!).uniq
       @status = 
         if statuses.length == 1
@@ -246,11 +246,17 @@ module Lopata
       @status = :ignored
       steps.each(&:ignored!)
     end
+
+    def failed!(exception = nil)
+      @status = :failed
+      @exception = exception
+      steps.each(&:ignored!)
+    end
   end
 
   # @private
   class StepExecution < BaseExecution
-    attr_reader :exception, :block, :pending_message
+    attr_reader :block, :pending_message
 
     class PendingStepFixedError < StandardError; end
 
@@ -290,6 +296,11 @@ module Lopata
     def pending!(message = nil)
       @status = :pending
       @pending_message = message
+    end
+
+    def failed!(exception = nil)
+      @status = :failed
+      @exception = exception
     end
   end
 end

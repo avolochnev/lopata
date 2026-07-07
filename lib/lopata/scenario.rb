@@ -102,10 +102,18 @@ class Lopata::Scenario
       @current_step = step
       return :skipped if step.skipped?
       return :ignored if step.ignored?
-      if step.condition&.dynamic && !step.condition.match_dynamic?(scenario)
-        step.ignored!
-        return :ignored
+      if step.condition&.dynamic
+        begin
+          unless step.condition.match_dynamic?(scenario)
+            step.ignored!
+            return :ignored
+          end
+        rescue Exception => e
+          step.failed! e
+          return :failed
+        end
       end
+
       if step.group?
         skip_rest = false
         step.steps.each do

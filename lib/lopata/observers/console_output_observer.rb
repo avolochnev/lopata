@@ -53,6 +53,10 @@ module Lopata
             else
               log_steps(step.steps)
             end
+            if step.exception
+              puts step.exception.inspect
+              puts indent(4, backtrace_formatter.error_message(step.exception, include_backtrace: true))
+            end
           else
             puts colored("  #{status_marker(step.status)} #{step.title}", step.status)
             puts indent(4, backtrace_formatter.error_message(step.exception, include_backtrace: true)) if step.failed?

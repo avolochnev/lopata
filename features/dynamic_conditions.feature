@@ -66,3 +66,31 @@ Feature: Conditions calculated during script running.
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "2 scenarios (1 failed, 1 passed)"
 
+  Scenario: Failure in dynamic condition
+    Given a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Condition with failures' do
+        it_if -> { 2 / 0 }, 'unrunned test' do
+          expect(2).to eq 2
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "1 scenario (1 failed)"
+     And the output should contain "ZeroDivisionError"
+
+  Scenario: Failure in dynamic condition
+    Given a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Group condition with failures' do
+        context_if -> { 2 / 0 }, 'unrunned group' do
+          it 'unrunned test' do
+            expect(2).to eq 2
+          end
+        end
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "1 scenario (1 failed)"
+     And the output should contain "ZeroDivisionError"
+
