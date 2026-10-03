@@ -63,7 +63,7 @@ class Lopata::Scenario
   # @private
   # Scenario execution and live-cycle information
   class Execution
-    attr_reader :scenario, :current_step, :top, :title, :base_metadata
+    attr_reader :scenario, :current_step, :top, :title, :base_metadata, :started_at
 
     def initialize(title, metadata = {})
       @title = title
@@ -87,6 +87,7 @@ class Lopata::Scenario
         setup
         top.reset_status
       end
+      @started_at = Time.now
       world.notify_observers(:scenario_started, self)
       run_step(top)
       world.notify_observers(:scenario_finished, self)
