@@ -40,7 +40,10 @@ module Lopata
         if step.is_a?(String)
           Lopata::SharedStep.find(step).steps.each do |shared_step|
             next if shared_step.condition && !shared_step.condition.match?(scenario)
-            steps += shared_step.execution_steps(scenario, parent: parent)
+            shared_executions = shared_step.execution_steps(scenario, parent: parent)
+            # Static conditions are already applied on build-time, dynamic ones must be checked on runtime.
+            shared_executions.each { |e| e.add_condition(condition) } if condition&.dynamic?
+            steps += shared_executions
           end
         elsif step.is_a?(Proc)
           steps << StepExecution.new(self, parent, condition: condition, &step)
@@ -173,7 +176,12 @@ module Lopata
     end
 
     def ignored!
-      status == :ignored
+      @status = :ignored
+    end
+
+    # Add condition to be matched in addition to own step condition.
+    def add_condition(other)
+      @condition = Lopata::Condition.combine(other, @condition)
     end
 
     def skip!

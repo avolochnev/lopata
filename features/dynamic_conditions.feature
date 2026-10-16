@@ -66,6 +66,38 @@ Feature: Conditions calculated during script running.
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "2 scenarios (1 failed, 1 passed)"
 
+  Scenario: Dynamic condition for shared steps
+    Given a file named "shared_steps/validations.rb" with:
+      """ruby
+      Lopata.shared_step 'data added' do
+        it 'contains item' do
+          expect(@data).to eq [1]
+        end
+      end
+
+      Lopata.shared_step 'data empty' do
+        it 'is empty' do
+          expect(@data).to eq []
+        end
+      end
+      """
+    And a file named "scenario.rb" with:
+      """ruby
+      Lopata.define 'Conditional shared validations' do
+        diagonal :add_data?,
+          'added' => true,
+          'skipped' => false
+
+        setup { @data = [] }
+        action_if(:add_data?) { @data << 1 }
+
+        verify_if -> { @data.length > 0 }, 'data added'
+        verify_unless -> { @data.length > 0 }, 'data empty'
+      end
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "2 scenarios (2 passed)"
+
   Scenario: Failure in dynamic condition
     Given a file named "scenario.rb" with:
       """ruby

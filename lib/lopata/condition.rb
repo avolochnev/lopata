@@ -10,6 +10,13 @@ module Lopata
     alias positive? positive
     alias dynamic? dynamic
 
+    # Combine conditions: the result matches when all the given conditions match.
+    def self.combine(*conditions)
+      conditions = conditions.compact
+      return conditions.first if conditions.length <= 1
+      CombinedCondition.new(conditions)
+    end
+
     # Match scenario on build-time. 
     def match?(scenario)
       # dynamic steps match scenario in build-time: will be verified later
@@ -42,6 +49,29 @@ module Lopata
       return false unless dynamic?
       matched = scenario_runtime.instance_exec(&condition)
       positive? ? matched : !matched
+    end
+  end
+
+  # @private
+  # All the conditions must match.
+  class CombinedCondition
+    attr_reader :conditions, :dynamic
+
+    def initialize(conditions)
+      @conditions = conditions
+      @dynamic = conditions.any?(&:dynamic?)
+    end
+
+    alias dynamic? dynamic
+
+    def match?(scenario)
+      conditions.all? { |c| c.match?(scenario) }
+    end
+
+    def match_dynamic?(scenario_runtime)
+      return false unless dynamic?
+      # Static conditions are verified on build-time, so check dynamic ones only.
+      conditions.select(&:dynamic?).all? { |c| c.match_dynamic?(scenario_runtime) }
     end
   end
 end
