@@ -500,6 +500,12 @@ class Lopata::ScenarioBuilder
       selected_variant
     end
 
+    # Start variants selection from the beginning.
+    def reset
+      @current = nil
+      @complete = nil
+    end
+
     def available_metadata_keys
       @available_metadata_keys ||= variants
         .map(&:value).select { |v| v.is_a?(Hash) }.flat_map(&:keys).map { |k| "#{key}_#{k}".to_sym  }.uniq

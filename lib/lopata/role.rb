@@ -40,9 +40,26 @@ module Lopata
       #
       # The scenario should be set to use the role via before_scenario step using #current_role param.
       #
+      # When block without arguments is given, it defines a role group: the variants (diagonals and options)
+      # declared inside the block are applied to the given roles only. Several role groups may be declared,
+      # the scenarios are generated for each group separately.
+      #
+      # @example Role groups
+      #     Lopata.define 'scenario' do
+      #       as :user, :admin do
+      #         diagonal :pc, 'one' => 1, 'two' => 2
+      #       end
+      #       as_first :guest do
+      #         diagonal :pc, 'three' => 3
+      #       end
+      #     end
+      #
       # @param args [Array<Symbol>] list of roles the scenario to be runned with.
-      # @param block [Block] the block to calculate role from scenario metadata.
+      # @param block [Block] the block to calculate role from scenario metadata (block with one argument),
+      #   or the role group definition (block without arguments).
       def as(*args, &block)
+        return add_role_group(args, true, &block) if block && block.arity == 0
+        raise_if_role_groups_defined
         @roles = args.flatten
         @roles << Lopata::ScenarioBuilder::CalculatedValue.new(&block) if block_given?
         @use_all_roles = true
@@ -59,8 +76,12 @@ module Lopata
       # Use this to describe possible roles, but not needed to run scenario with all of them in order to save time
       # of running.
       #
+      # When block is given, it defines a role group. See #as for details.
+      #
       # @param args [Array<Symbol>] list of roles the scenario to be runned with.
       def as_first(*args, &block)
+        return add_role_group(args, false, &block) if block
+        raise_if_role_groups_defined
         @roles = args.flatten
         @use_all_roles = false
         @role_options = nil
@@ -99,7 +120,78 @@ module Lopata
 
       # @private
       def diagonals
-        super + role_options
+        return super + role_options unless @current_role_group
+        super + @current_role_group.diagonals + @current_role_group.role_options
+      end
+
+      # @private
+      def options
+        return super unless @current_role_group
+        super + @current_role_group.options
+      end
+
+      # @private
+      def option_combinations
+        return super() unless @role_groups
+        @role_groups.flat_map do |group|
+          begin
+            @current_role_group = group
+            (options + diagonals).each(&:reset)
+            super()
+          ensure
+            @current_role_group = nil
+          end
+        end
+      end
+
+      private
+
+        def add_role_group(roles, use_all_roles, &block)
+          if @roles || @without_user
+            raise ArgumentError, 'Role groups (as/as_first with block) can not be combined with plain role declaration'
+          end
+          group = RoleGroup.new(roles.flatten, use_all_roles)
+          group.instance_exec(&block)
+          (@role_groups ||= []) << group
+        end
+
+        def raise_if_role_groups_defined
+          return unless @role_groups
+          raise ArgumentError, 'Plain role declaration can not be combined with role groups (as/as_first with block)'
+        end
+    end
+
+    # Set of roles with own variants. Variants defined in the group are applied to the group roles only.
+    #
+    # @see DSL#as
+    class RoleGroup
+      # @private
+      attr_reader :roles, :options, :diagonals
+
+      # @private
+      def initialize(roles, use_all_roles)
+        @roles, @use_all_roles = roles, use_all_roles
+        @options, @diagonals = [], []
+      end
+
+      # Define option for the role group.
+      # @see Lopata::ScenarioBuilder#option
+      def option(metadata_key, variants)
+        @options << Lopata::ScenarioBuilder::Option.new(metadata_key, variants)
+      end
+
+      # Define diagonal for the role group.
+      # @see Lopata::ScenarioBuilder#diagonal
+      def diagonal(metadata_key, variants)
+        @diagonals << Lopata::ScenarioBuilder::Diagonal.new(metadata_key, variants)
+      end
+
+      # @private
+      def role_options
+        @role_options ||= begin
+          role_variants = roles.map { |r| [Lopata.configuration.role_descriptions[r], r] }
+          [Lopata::ScenarioBuilder::Diagonal.new(:as, role_variants, @use_all_roles)]
+        end
       end
     end
   end

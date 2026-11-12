@@ -113,3 +113,30 @@ Feature: Roles
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "3 scenarios (3 passed)"
 
+
+
+  Scenario: Role groups with own variants
+    Given a file named "scenario.rb" with:
+      """ruby
+      require_relative 'env'
+
+      Lopata.define 'Role groups' do
+        as :user, :admin do
+          diagonal :number, 'one' => 1, 'two' => 2, 'three' => 3
+        end
+        as_first :guest do
+          diagonal :number, 'four' => 4
+        end
+
+        it 'works' do
+          if current_role == :guest
+            expect(number).to eq 4
+          else
+            expect([1, 2, 3]).to include(number)
+          end
+        end
+      end
+
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "4 scenarios (4 passed)"
