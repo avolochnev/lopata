@@ -133,6 +133,7 @@ module Lopata
       # @private
       def option_combinations
         return super() unless @role_groups
+        share_role_group_metadata_keys
         @role_groups.flat_map do |group|
           begin
             @current_role_group = group
@@ -145,6 +146,17 @@ module Lopata
       end
 
       private
+
+        # Variants of the same metadata key may be declared in several role groups. Each group knows only the keys
+        # of its own variants, so the keys used in other groups are not defined (NoMethodError on access).
+        # Share the keys across the groups to get nil for them, as for the variants of a single option.
+        def share_role_group_metadata_keys
+          all = @role_groups.flat_map { |g| g.options + g.diagonals }
+          all.group_by(&:key).each_value do |same_key|
+            keys = same_key.flat_map(&:available_metadata_keys).uniq
+            same_key.each { |o| o.available_metadata_keys = keys }
+          end
+        end
 
         def add_role_group(roles, use_all_roles, &block)
           if @roles || @without_user

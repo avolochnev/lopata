@@ -140,3 +140,25 @@ Feature: Roles
       """
     When I run `bundle exec lopata scenario.rb`
     Then the output should contain "4 scenarios (4 passed)"
+
+  Scenario: Variant keys of other role groups are defined as nil
+    Given a file named "scenario.rb" with:
+      """ruby
+      require_relative 'env'
+
+      Lopata.define 'Role groups keys' do
+        as :user do
+          diagonal :pc, 'contract' => { type: :contract }
+        end
+        as :admin do
+          diagonal :pc, 'rate' => { type: :rate }, 'clarification' => { clarify?: true }
+        end
+
+        it 'works' do
+          expect(pc_clarify?).to be_nil unless current_role == :admin && pc_type.nil?
+        end
+      end
+
+      """
+    When I run `bundle exec lopata scenario.rb`
+    Then the output should contain "3 scenarios (3 passed)"

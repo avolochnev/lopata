@@ -471,6 +471,7 @@ class Lopata::ScenarioBuilder
   # @private
   class Option
     attr_reader :variants, :key, :use_all_variants
+    attr_writer :available_metadata_keys
     def initialize(key, variants, use_all_variants = true)
       @key = key
       @variants =
